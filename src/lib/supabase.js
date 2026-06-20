@@ -15,11 +15,23 @@ export const supabase = url && anon
 
 export const hasBackend = !!supabase;
 
-// A throwaway, per-session anonymous tag used only for server-side rate limiting.
-// Not a login and not persisted (no localStorage per project rules).
-export const voterToken = (typeof crypto !== "undefined" && crypto.randomUUID)
-  ? crypto.randomUUID()
-  : Math.random().toString(36).slice(2);
+// A persistent, anonymous per-browser visitor id stored in a first-party cookie
+// (~1 year). Survives reloads so analytics counts unique browsers and the vote
+// rate limits persist across visits. Not a login; identifies a browser, not a
+// person (incognito / cleared cookies / a second device count separately).
+function getVisitorId() {
+  const rnd = () => (typeof crypto !== "undefined" && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+  if (typeof document === "undefined") return rnd();
+  const m = document.cookie.match(/(?:^|;\s*)ar_vid=([^;]+)/);
+  if (m) return decodeURIComponent(m[1]);
+  const id = rnd();
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `ar_vid=${encodeURIComponent(id)}; Max-Age=${60 * 60 * 24 * 365}; Path=/; SameSite=Lax${secure}`;
+  return id;
+}
+export const voterToken = getVisitorId();
 
 // Fire-and-forget analytics event via the log_event RPC. No-op without a
 // backend; failures are swallowed so analytics never disrupt the UI.

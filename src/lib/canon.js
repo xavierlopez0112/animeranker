@@ -1,0 +1,80 @@
+// canon.js — collapse per-season / per-arc AniList entries into ONE canonical
+// franchise title. "Attack on Titan Season 3", "...: The Final Season" etc.
+// all become a single "Attack on Titan".
+//
+// Used by BOTH scripts/seed.js (to build the catalog) and the frontend (to map
+// live AniList titles to the same slug), so the two ALWAYS agree on slugs.
+
+// Explicit franchise overrides. If a raw title matches, it maps straight to the
+// canonical name. These handle seasons, parts AND named story arcs (which the
+// generic suffix rules below can't detect, e.g. "Demon Slayer: ... Arc").
+// First match wins, so order doesn't matter much here.
+const OVERRIDES = [
+  [/^attack on titan|^shingeki no kyojin/i, "Attack on Titan"],
+  [/^demon slayer|kimetsu no yaiba/i, "Demon Slayer"],
+  [/^jujutsu kaisen/i, "Jujutsu Kaisen"],
+  [/^my hero academia|^boku no hero/i, "My Hero Academia"],
+  [/^bleach/i, "Bleach"],
+  [/^jojo'?s bizarre adventure/i, "JoJo's Bizarre Adventure"],
+  [/^mob psycho 100/i, "Mob Psycho 100"],
+  [/^one punch man/i, "One Punch Man"],
+  [/^spy ?x ?family/i, "Spy x Family"],
+  [/^vinland saga/i, "Vinland Saga"],
+  [/^the rising of the shield hero|^tate no yuusha/i, "The Rising of the Shield Hero"],
+  [/^kaguya-?sama/i, "Kaguya-sama: Love is War"],
+  [/^dr\.? ?stone/i, "Dr. Stone"],
+  [/^the seven deadly sins|^nanatsu no taizai/i, "The Seven Deadly Sins"],
+  [/^sword art online/i, "Sword Art Online"],
+  [/^tokyo ghoul/i, "Tokyo Ghoul"],
+  [/^haikyu/i, "Haikyuu!!"],
+  [/^black clover/i, "Black Clover"],
+  [/^fire force|^enen no shouboutai/i, "Fire Force"],
+  [/^the promised neverland|^yakusoku no neverland/i, "The Promised Neverland"],
+  [/^overlord/i, "Overlord"],
+  [/^re:?\s?zero/i, "Re:Zero"],
+  [/reincarnated as a slime|^tensei shitara slime/i, "That Time I Got Reincarnated as a Slime"],
+  [/^the eminence in shadow/i, "The Eminence in Shadow"],
+  [/^classroom of the elite/i, "Classroom of the Elite"],
+  [/^chainsaw man/i, "Chainsaw Man"],
+  [/^frieren|^sousou no frieren/i, "Frieren: Beyond Journey's End"],
+  [/oshi no ko/i, "Oshi no Ko"],
+  [/^solo leveling/i, "Solo Leveling"],
+  [/^blue lock/i, "Blue Lock"],
+  [/^made in abyss/i, "Made in Abyss"],
+  [/the apothecary diaries|^kusuriya no hitorigoto/i, "The Apothecary Diaries"],
+  [/^konosuba/i, "KonoSuba"],
+  [/^hunter ?x ?hunter/i, "Hunter x Hunter"],
+  [/^fullmetal alchemist/i, "Fullmetal Alchemist: Brotherhood"],
+  [/^code geass/i, "Code Geass"],
+  [/^naruto/i, "Naruto"],
+  [/^parasyte/i, "Parasyte"],
+  // casing fixes for AniList's all-caps / stylized titles
+  [/^one piece$/i, "One Piece"],
+  [/^erased$/i, "Erased"],
+  [/your lie in april/i, "Your Lie in April"],
+  // --- debatable merges (fans may disagree) — easy to remove if you want them split:
+  [/^jojo/i, "JoJo's Bizarre Adventure"],
+  [/^fate\/?(zero|stay|grand|kaleid|apocrypha)/i, "Fate series"],
+];
+
+// Generic suffix strippers for everything NOT covered by an override.
+const SUFFIX = [
+  /\s*[:\-–—]\s*the final season.*$/i, // ": The Final Season", "- The Final Season Part 2"
+  /\s+final season.*$/i,
+  /\s+\d+(st|nd|rd|th)\s+season.*$/i,   // "2nd Season"
+  /\s+(second|third|fourth|fifth|sixth|seventh)\s+season.*$/i, // spelled-out
+  /\s+season\s+\d+.*$/i,                // "Season 2"
+  /\s+part\s+\d+.*$/i,                  // "Part 2"
+  /\s+\d+(st|nd|rd|th)\s+cour.*$/i,
+  /\s+cour\s+\d+.*$/i,
+  /\s+(ii|iii|iv|vi|v)$/i,              // trailing roman numeral
+];
+
+export function canonicalTitle(rawTitle) {
+  const t = (rawTitle || "").trim();
+  for (const [re, canon] of OVERRIDES) if (re.test(t)) return canon;
+  let s = t;
+  for (const re of SUFFIX) s = s.replace(re, "");
+  s = s.replace(/[\s:–—-]+$/g, "").trim(); // tidy leftover trailing separators
+  return s || t;
+}

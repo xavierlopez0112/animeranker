@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Cover from "./Cover.jsx";
 import { S } from "../styles.js";
 import { loadKey, saveKey } from "../lib/storage.js";
+import { supabase, hasBackend } from "../lib/supabase.js";
 
 const WAR_BUDGET = 12;
 
 export default function EraWar({ data, onVote }) {
   const oldPool = data.filter((d) => d.era === "old");
   const newPool = data.filter((d) => d.era === "new");
-  const eraRef = useRef({ old: 0, new: 0 });
+  const eraRef = useRef({ old: 0, new: 0 }); // local fallback tally (no backend)
   const [started, setStarted] = useState(false);
   const [pair, setPair] = useState(null);
   const [count, setCount] = useState(0);
@@ -16,22 +17,35 @@ export default function EraWar({ data, onVote }) {
   const [global, setGlobal] = useState(null);
   const [done, setDone] = useState(false);
 
-  useEffect(() => { (async () => { eraRef.current = await loadKey("anime-era-v1", { old: 0, new: 0 }); })(); }, []);
+  useEffect(() => { if (!hasBackend) (async () => { eraRef.current = await loadKey("anime-era-v1", { old: 0, new: 0 }); })(); }, []);
+
   const draw = useCallback(() => {
     const o = oldPool[Math.floor(Math.random() * oldPool.length)];
     const n = newPool[Math.floor(Math.random() * newPool.length)];
     return Math.random() < 0.5 ? [o, n] : [n, o];
   }, [oldPool, newPool]);
   const start = () => { setStarted(true); setCount(0); setTally({ old: 0, new: 0 }); setDone(false); setPair(draw()); };
+
+  // fetch the shared global tally (Supabase era_tally view), else the local one
+  const fetchGlobal = useCallback(async () => {
+    if (hasBackend) {
+      const { data: t, error } = await supabase.from("era_tally").select("*").single();
+      if (!error && t) return { old: t.old, new: t.new };
+    }
+    return { ...eraRef.current };
+  }, []);
+
   const choose = useCallback(async (idx) => {
     if (!pair) return; const chosen = pair[idx], other = pair[1 - idx]; const isNew = chosen.era === "new";
-    onVote(chosen, other);
+    onVote(chosen, other, "era"); // logs an era-mode vote (server-side or local)
     setTally((t) => (isNew ? { ...t, new: t.new + 1 } : { ...t, old: t.old + 1 }));
-    eraRef.current = { ...eraRef.current, [isNew ? "new" : "old"]: eraRef.current[isNew ? "new" : "old"] + 1 };
-    saveKey("anime-era-v1", eraRef.current);
+    if (!hasBackend) {
+      eraRef.current = { ...eraRef.current, [isNew ? "new" : "old"]: eraRef.current[isNew ? "new" : "old"] + 1 };
+      saveKey("anime-era-v1", eraRef.current);
+    }
     const c = count + 1; setCount(c);
-    if (c >= WAR_BUDGET) { setGlobal({ ...eraRef.current }); setDone(true); setPair(null); } else setPair(draw());
-  }, [pair, count, onVote, draw]);
+    if (c >= WAR_BUDGET) { setGlobal(await fetchGlobal()); setDone(true); setPair(null); } else setPair(draw());
+  }, [pair, count, onVote, draw, fetchGlobal]);
   useEffect(() => { if (!pair) return; const h = (e) => { if (e.key === "ArrowLeft") choose(0); else if (e.key === "ArrowRight") choose(1); }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [pair, choose]);
 
   if (oldPool.length < 1 || newPool.length < 1) return <main style={S.stage}><h1 style={S.h1}>Era War needs both eras</h1><p style={S.sub}>Couldn’t find enough old- and new-gen titles in the roster.</p></main>;

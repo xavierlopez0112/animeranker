@@ -1,20 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 
 /* =========================================================================
-   AnimeRanker  (v3 — categories + Era War)
+   AnimeRanker  (v3 — categories + Era War, Supabase-backed)
    Modes:
      Vote        endless head-to-head -> global ELO  (scoped by category)
      Leaderboard global ranking, list <-> tier view  (scoped by category)
      Tier Quiz   short bounded run -> personal tier list (scoped by category)
      Era War     Old Gen vs New Gen cross-era quiz with a global tally
-   Categories scope the first three modes: All / Old Gen / New Gen / Shonen /
-     Seinen / Isekai / Fantasy / Action / Romance / Slice of Life /
-     Sci-Fi & Mecha / Sports / Dark & Psych.
-   Data: AniList GraphQL (top ~100), falls back to a baked-in tagged list.
 
-   This file is the app shell; the pieces live in:
+   Data: AniList GraphQL (top ~100) collapsed to canonical franchises, falling
+   back to a baked-in tagged list. The global board + Era War tally live in
+   Supabase (server-side ELO via the cast_vote RPC); if the backend is
+   unreachable the app falls back to the local storage wrapper.
+
+   Pieces:
      data/   anilist, fallback, categories
-     lib/    elo, tiers, storage, slug, quiz
+     lib/    elo, tiers, storage, slug, quiz, canon, supabase
      components/ Cover, ChipBar, Vote, Leaderboard, TierList, Quiz, EraWar
      styles.js — shared tokens (CSS) + inline style objects (S)
    ========================================================================= */
@@ -22,15 +23,30 @@ import { useState, useEffect, useCallback } from "react";
 import { fetchAnime } from "./data/anilist.js";
 import { FALLBACK } from "./data/fallback.js";
 import { inCategory } from "./data/categories.js";
+import { canonicalizeList } from "./lib/canon.js";
 import { slug } from "./lib/slug.js";
 import { START_ELO, K_GLOBAL, expected } from "./lib/elo.js";
 import { loadKey, saveKey } from "./lib/storage.js";
+import { supabase, hasBackend, voterToken } from "./lib/supabase.js";
 import { CSS, S } from "./styles.js";
 import Vote from "./components/Vote.jsx";
 import Leaderboard from "./components/Leaderboard.jsx";
 import Quiz from "./components/Quiz.jsx";
 import EraWar from "./components/EraWar.jsx";
 import ChipBar from "./components/ChipBar.jsx";
+
+// Load the global board: from Supabase `ratings` if available, else local.
+async function loadBoard() {
+  if (hasBackend) {
+    const { data, error } = await supabase.from("ratings").select("media_id, elo, wins, losses");
+    if (!error && data) {
+      const board = {};
+      for (const r of data) board[r.media_id] = { elo: r.elo, w: r.wins, l: r.losses };
+      return board;
+    }
+  }
+  return loadKey("anime-elo-v3", {});
+}
 
 export default function AnimeRanker() {
   const [tab, setTab] = useState("vote");
@@ -42,23 +58,47 @@ export default function AnimeRanker() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const b = await loadKey("anime-elo-v3", {}); if (alive) setBoard(b);
-      try { const live = await fetchAnime(); if (alive && live && live.length) { setData(live); setSource("live"); return; } throw new Error("empty"); }
-      catch (_) { if (alive) { setData(FALLBACK); setSource("fallback"); } }
+      const b = await loadBoard(); if (alive) setBoard(b);
+      try {
+        const live = canonicalizeList(await fetchAnime());
+        if (alive && live.length) { setData(live); setSource("live"); return; }
+        throw new Error("empty");
+      } catch (_) {
+        if (alive) { setData(canonicalizeList(FALLBACK)); setSource("fallback"); }
+      }
     })();
     return () => { alive = false; };
   }, []);
 
   const ratingOf = useCallback((it) => board[slug(it.title)]?.elo ?? START_ELO, [board]);
-  const recordVote = useCallback((winner, loser) => {
+
+  // Record a vote: update the UI instantly (optimistic), then persist on the
+  // server via cast_vote and reconcile to the authoritative scores. With no
+  // backend, fall back to saving locally.
+  const recordVote = useCallback((winner, loser, mode = "vote") => {
+    const wk = slug(winner.title), lk = slug(loser.title);
     setBoard((prev) => {
-      const next = { ...prev }; const wk = slug(winner.title), lk = slug(loser.title);
-      const w = next[wk] || { elo: START_ELO, w: 0, l: 0 }; const l = next[lk] || { elo: START_ELO, w: 0, l: 0 };
+      const next = { ...prev };
+      const w = next[wk] || { elo: START_ELO, w: 0, l: 0 };
+      const l = next[lk] || { elo: START_ELO, w: 0, l: 0 };
       const ew = expected(w.elo, l.elo);
       next[wk] = { elo: Math.round(w.elo + K_GLOBAL * (1 - ew)), w: w.w + 1, l: w.l };
       next[lk] = { elo: Math.round(l.elo + K_GLOBAL * (0 - (1 - ew))), w: l.w, l: l.l + 1 };
-      saveKey("anime-elo-v3", next); return next;
+      if (!hasBackend) saveKey("anime-elo-v3", next);
+      return next;
     });
+    if (hasBackend) {
+      supabase.rpc("cast_vote", { p_winner: wk, p_loser: lk, p_mode: mode, p_token: voterToken })
+        .then(({ data: rows, error }) => {
+          if (error) { console.warn("cast_vote failed:", error.message); return; }
+          const r = rows && rows[0];
+          if (r) setBoard((prev) => ({
+            ...prev,
+            [wk]: { ...(prev[wk] || { w: 0, l: 0 }), elo: r.winner_elo },
+            [lk]: { ...(prev[lk] || { w: 0, l: 0 }), elo: r.loser_elo },
+          }));
+        });
+    }
   }, []);
 
   const filtered = data ? (cat === "all" ? data : data.filter((d) => inCategory(d, cat))) : [];

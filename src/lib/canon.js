@@ -1,3 +1,6 @@
+import { slug } from "./slug.js";
+import { ERA_CUT } from "../data/categories.js";
+
 // canon.js — collapse per-season / per-arc AniList entries into ONE canonical
 // franchise title. "Attack on Titan Season 3", "...: The Final Season" etc.
 // all become a single "Attack on Titan".
@@ -77,4 +80,29 @@ export function canonicalTitle(rawTitle) {
   for (const re of SUFFIX) s = s.replace(re, "");
   s = s.replace(/[\s:–—-]+$/g, "").trim(); // tidy leftover trailing separators
   return s || t;
+}
+
+// Collapse a list of normalized items (per-season AniList entries) into the same
+// canonical franchises the backend stores: deduped by canonical slug, keeping
+// the first (most popular) entry's art/genres and the EARLIEST season's year/era.
+// Used by the frontend so its slugs match the seeded `media` catalog exactly.
+export function canonicalizeList(items) {
+  const groups = new Map();
+  for (const it of items || []) {
+    const title = canonicalTitle(it.title);
+    const id = slug(title);
+    if (!id) continue;
+    let g = groups.get(id);
+    if (!g) { g = { id, title, flagship: it, minYear: it.year ?? null }; groups.set(id, g); }
+    if (it.year != null && (g.minYear == null || it.year < g.minYear)) g.minYear = it.year;
+  }
+  return [...groups.values()].map((g) => ({
+    id: g.id,
+    title: g.title,
+    image: g.flagship.image ?? null,
+    year: g.minYear,
+    era: (g.minYear != null && g.minYear < ERA_CUT) ? "old" : "new",
+    demo: g.flagship.demo ?? null,
+    genres: g.flagship.genres ?? [],
+  }));
 }

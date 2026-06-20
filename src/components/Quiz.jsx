@@ -38,7 +38,7 @@ export default function Quiz({ data, ratingOf, onVote }) {
     const winner = pair[winIdx], loser = pair[1 - winIdx]; const wk = slug(winner.title), lk = slug(loser.title);
     const ew = expected(s.personal[wk], s.personal[lk]);
     s.personal[wk] += K_LOCAL * (1 - ew); s.personal[lk] += K_LOCAL * (0 - (1 - ew));
-    onVote(winner, loser); s.count += 1; setCount(s.count);
+    onVote(winner, loser, "quiz"); s.count += 1; setCount(s.count);
     if (s.count >= s.budget) finish(); else nextPair();
   }, [pair, onVote, finish, nextPair]);
   useEffect(() => { if (!pair) return; const h = (e) => { if (e.key === "ArrowLeft") choose(0); else if (e.key === "ArrowRight") choose(1); }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [pair, choose]);

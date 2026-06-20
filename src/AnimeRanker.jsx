@@ -27,7 +27,7 @@ import { canonicalizeList } from "./lib/canon.js";
 import { slug } from "./lib/slug.js";
 import { START_ELO, K_GLOBAL, expected } from "./lib/elo.js";
 import { loadKey, saveKey } from "./lib/storage.js";
-import { supabase, hasBackend, voterToken } from "./lib/supabase.js";
+import { supabase, hasBackend, voterToken, logEvent } from "./lib/supabase.js";
 import { CSS, S } from "./styles.js";
 import Vote from "./components/Vote.jsx";
 import Leaderboard from "./components/Leaderboard.jsx";
@@ -101,6 +101,9 @@ export default function AnimeRanker() {
     }
   }, []);
 
+  useEffect(() => { logEvent("session_start"); }, []);
+  const changeTab = (k) => { setTab(k); logEvent("tab_view", { tab: k }); };
+
   const filtered = data ? (cat === "all" ? data : data.filter((d) => inCategory(d, cat))) : [];
   const scoped = tab !== "war"; // category bar shows for vote/board/quiz
 
@@ -111,7 +114,7 @@ export default function AnimeRanker() {
         <div style={S.brand}><span style={S.brandMark}>◆</span> ANIME<span style={{ color: "var(--accent)" }}>RANKER</span></div>
         <nav style={S.nav}>
           {[["vote", "Vote"], ["board", "Leaderboard"], ["quiz", "Tier Quiz"], ["war", "Era War"]].map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)} style={{ ...S.tab, ...(tab === k ? S.tabOn : {}) }}>{label}</button>
+            <button key={k} onClick={() => changeTab(k)} style={{ ...S.tab, ...(tab === k ? S.tabOn : {}) }}>{label}</button>
           ))}
         </nav>
         <div style={S.sourceTag}>{source === "live" ? "live · anilist" : source === "fallback" ? "offline list" : "loading…"}</div>

@@ -29,9 +29,13 @@ console.log(`votes before: ${votesBefore}`);
 const { error: dErr } = await supabase.from("votes").delete().not("id", "is", null);
 if (dErr) { console.error("✗ delete votes failed:", dErr.message); process.exit(1); }
 
+const { error: eErr } = await supabase.from("events").delete().not("id", "is", null);
+if (eErr) { console.error("✗ delete events failed:", eErr.message); process.exit(1); }
+
 const { error: uErr } = await supabase.from("ratings").update({ elo: 1000, wins: 0, losses: 0 }).not("media_id", "is", null);
 if (uErr) { console.error("✗ reset ratings failed:", uErr.message); process.exit(1); }
 
 const { count: votesAfter } = await supabase.from("votes").select("*", { count: "exact", head: true });
+const { count: eventsAfter } = await supabase.from("events").select("*", { count: "exact", head: true });
 const { data: sample } = await supabase.from("ratings").select("media_id, elo, wins, losses").neq("elo", 1000).limit(5);
-console.log(`✓ Reset done. votes now: ${votesAfter}. ratings not at 1000: ${sample ? sample.length : 0}.`);
+console.log(`✓ Reset done. votes: ${votesAfter}, events: ${eventsAfter}, ratings not at 1000: ${sample ? sample.length : 0}.`);

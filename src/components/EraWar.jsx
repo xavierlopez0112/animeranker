@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Cover from "./Cover.jsx";
 import { S } from "../styles.js";
 import { loadKey, saveKey } from "../lib/storage.js";
-import { supabase, hasBackend } from "../lib/supabase.js";
+import { supabase, hasBackend, logEvent } from "../lib/supabase.js";
 
 const WAR_BUDGET = 12;
 
@@ -44,7 +44,7 @@ export default function EraWar({ data, onVote }) {
       saveKey("anime-era-v1", eraRef.current);
     }
     const c = count + 1; setCount(c);
-    if (c >= WAR_BUDGET) { setGlobal(await fetchGlobal()); setDone(true); setPair(null); } else setPair(draw());
+    if (c >= WAR_BUDGET) { logEvent("era_complete", { picks: c }); setGlobal(await fetchGlobal()); setDone(true); setPair(null); } else setPair(draw());
   }, [pair, count, onVote, draw, fetchGlobal]);
   useEffect(() => { if (!pair) return; const h = (e) => { if (e.key === "ArrowLeft") choose(0); else if (e.key === "ArrowRight") choose(1); }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [pair, choose]);
 

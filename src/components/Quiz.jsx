@@ -6,6 +6,7 @@ import { slug } from "../lib/slug.js";
 import { expected, K_LOCAL } from "../lib/elo.js";
 import { assignTiers } from "../lib/tiers.js";
 import { DEPTHS } from "../lib/quiz.js";
+import { logEvent } from "../lib/supabase.js";
 
 export default function Quiz({ data, ratingOf, onVote }) {
   const q = useRef(null);
@@ -24,13 +25,14 @@ export default function Quiz({ data, ratingOf, onVote }) {
     if (s.last && s.last[0] === a.id && s.last[1] === b.id) { i = (i + 1) % (ranked.length - 1); a = ranked[i]; b = ranked[i + 1]; }
     s.last = [a.id, b.id]; setPair([a, b]);
   }, []);
-  const finish = useCallback(() => { const s = q.current; const sorted = [...s.pool].sort((x, y) => pe(y) - pe(x)); setTiers(assignTiers(sorted)); setPair(null); }, []);
+  const finish = useCallback(() => { const s = q.current; const sorted = [...s.pool].sort((x, y) => pe(y) - pe(x)); setTiers(assignTiers(sorted)); setPair(null); logEvent("quiz_complete", { picks: s.count, titles: s.pool.length }); }, []);
   const start = useCallback((depth) => {
     const pool = data.slice(0, Math.min(depth.pool, data.length)); const personal = {};
     pool.forEach((it) => { personal[slug(it.title)] = ratingOf(it); });
     const idx = pool.map((_, i) => i); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
     const budget = Math.min(depth.budget, Math.max(1, pool.length * 2));
     q.current = { pool, personal, coverage: idx.map((i) => pool[i]), count: 0, budget, last: null };
+    logEvent("quiz_start", { depth: depth.key, pool: pool.length });
     setBudget(budget); setCount(0); setTiers(null); setStarted(true); setTimeout(nextPair, 0);
   }, [data, ratingOf, nextPair]);
   const choose = useCallback((winIdx) => {

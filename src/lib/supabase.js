@@ -20,3 +20,17 @@ export const hasBackend = !!supabase;
 export const voterToken = (typeof crypto !== "undefined" && crypto.randomUUID)
   ? crypto.randomUUID()
   : Math.random().toString(36).slice(2);
+
+// Fire-and-forget analytics event via the log_event RPC. No-op without a
+// backend; failures are swallowed so analytics never disrupt the UI.
+export function logEvent(type, props = {}) {
+  if (!hasBackend) return;
+  supabase.rpc("log_event", {
+    p_type: type,
+    p_props: props,
+    p_referrer: typeof document !== "undefined" ? (document.referrer || null) : null,
+    p_path: typeof location !== "undefined" ? location.pathname : null,
+    p_token: voterToken,
+  }).then(({ error }) => { if (error) console.debug("log_event:", error.message); })
+    .catch(() => {});
+}

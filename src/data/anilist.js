@@ -19,3 +19,36 @@ export async function fetchAnime() {
   const j = await res.json();
   return [...j.data.p1.media, ...j.data.p2.media].map(normLive);
 }
+
+// strip AniList's HTML description down to plain text, trimmed to a short synopsis
+function stripHtml(s) {
+  return (s || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+function clamp(s, max = 360) {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const sp = cut.lastIndexOf(" ");
+  return (sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s.,;:]+$/, "") + "…";
+}
+
+// lazy per-title description fetch, cached in-memory. Returns plain text or "".
+const descCache = new Map();
+export async function fetchDescription(anilistId) {
+  if (!anilistId) return "";
+  if (descCache.has(anilistId)) return descCache.get(anilistId);
+  try {
+    const q = `query($id:Int){Media(id:$id,type:ANIME){description(asHtml:false)}}`;
+    const res = await fetch("https://graphql.anilist.co", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ query: q, variables: { id: anilistId } }) });
+    const j = await res.json();
+    const text = clamp(stripHtml(j?.data?.Media?.description || ""));
+    descCache.set(anilistId, text);
+    return text;
+  } catch (_) {
+    return "";
+  }
+}

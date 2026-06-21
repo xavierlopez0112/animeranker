@@ -98,6 +98,7 @@ export function canonicalizeList(items) {
   }
   return [...groups.values()].map((g) => ({
     id: g.id,
+    anilist_id: /^\d+$/.test(g.flagship.id) ? Number(g.flagship.id) : null,
     title: g.title,
     image: g.flagship.image ?? null,
     year: g.minYear,

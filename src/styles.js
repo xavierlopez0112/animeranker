@@ -16,8 +16,8 @@ export const CSS = `
 @media (prefers-reduced-motion: reduce){ .ar-card,.ar-cover{transition:none!important} }
 .ar-home{display:grid; grid-template-columns:1.25fr .9fr; gap:44px; align-items:start;}
 @media (max-width:880px){ .ar-home{grid-template-columns:1fr;} }
-.ar-detail-top{display:grid; grid-template-columns:300px 1fr; gap:36px; align-items:start;}
-@media (max-width:760px){ .ar-detail-top{grid-template-columns:1fr; max-width:360px;} }
+.ar-detail-top{display:grid; grid-template-columns:280px minmax(0,1fr) 340px; gap:32px; align-items:start;}
+@media (max-width:980px){ .ar-detail-top{grid-template-columns:1fr;} .ar-detail-cover{max-width:300px;} }
 .ar-row-link{transition:background .15s ease;}
 .ar-row-link:hover{background:rgba(255,255,255,.05);}
 .ar-card-link{transition:transform .15s ease, border-color .15s ease;}
@@ -132,4 +132,17 @@ export const S = {
   nearbyThumb: { width: "100%", aspectRatio: "3/4", borderRadius: 10, overflow: "hidden", marginBottom: 8 },
   nearbyName: { fontWeight: 700, fontSize: 13, lineHeight: 1.15 },
   nearbyElo: { fontFamily: "ui-monospace, monospace", fontWeight: 800, fontSize: 14, marginTop: 4 },
+
+  // ---- detail: description + info panel ----
+  infoPanel: { background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16, padding: 20 },
+  infoEyebrow: { fontSize: 11, fontWeight: 700, letterSpacing: ".2em", color: "var(--muted)", marginBottom: 10 },
+  infoDesc: { fontSize: 14, lineHeight: 1.6, color: "var(--text)", margin: 0, whiteSpace: "pre-line" },
+  infoDescMuted: { fontSize: 14, lineHeight: 1.6, color: "var(--faint)", margin: 0, fontStyle: "italic" },
+  infoDivider: { height: 1, background: "var(--line)", margin: "18px 0" },
+  infoRow: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 14, padding: "7px 0" },
+  infoLabel: { fontSize: 11, fontWeight: 700, letterSpacing: ".14em", color: "var(--muted)", flex: "0 0 auto" },
+  infoValue: { fontSize: 14, fontWeight: 600, textAlign: "right" },
+  infoValueMono: { fontSize: 14, fontWeight: 800, fontFamily: "ui-monospace, monospace", textAlign: "right" },
+  genreChips: { display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "flex-end" },
+  genreChip: { fontSize: 11, fontWeight: 600, color: "var(--muted)", background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 999, padding: "3px 9px" },
 };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Cover from "./Cover.jsx";
 import TierList from "./TierList.jsx";
 import { S } from "../styles.js";
@@ -21,13 +22,13 @@ export default function Leaderboard({ data, board }) {
       {view === "list" && (
         <div style={S.boardWrap}>
           {rows.map((row, i) => (
-            <div key={row.it.id} style={{ ...S.boardRow, ...(i < 3 ? S.boardRowTop : {}) }}>
+            <Link key={row.it.id} to={`/anime/${row.it.id}`} className="ar-row-link" style={{ ...S.boardRow, ...(i < 3 ? S.boardRowTop : {}), textDecoration: "none", color: "inherit" }}>
               <div style={{ ...S.rank, color: i === 0 ? "var(--accent)" : i < 3 ? "#fff" : "var(--muted)" }}>{i + 1}</div>
               <div style={S.thumb}><Cover item={row.it} /></div>
               <div style={S.boardName}>{row.it.title}</div>
               <div style={S.boardStat}>{row.games > 0 ? <span style={{ color: "var(--muted)" }}>{row.w}W · {row.l}L · {Math.round(row.wr * 100)}%</span> : <span style={{ color: "var(--faint)" }}>no votes yet</span>}</div>
               <div style={S.boardElo}>{row.elo}</div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

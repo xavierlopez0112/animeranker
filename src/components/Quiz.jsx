@@ -5,7 +5,7 @@ import { S } from "../styles.js";
 import { slug } from "../lib/slug.js";
 import { expected, K_LOCAL } from "../lib/elo.js";
 import { assignTiers } from "../lib/tiers.js";
-import { DEPTHS } from "../lib/quiz.js";
+import { PICK_CAP } from "../lib/quiz.js";
 import { logEvent } from "../lib/supabase.js";
 import { shareTierList } from "../lib/shareCard.js";
 
@@ -37,13 +37,13 @@ export default function Quiz({ data, ratingOf, onVote }) {
     s.last = [a.id, b.id]; setPair([a, b]);
   }, []);
   const finish = useCallback(() => { const s = q.current; const sorted = [...s.pool].sort((x, y) => pe(y) - pe(x)); setTiers(assignTiers(sorted)); setPair(null); logEvent("quiz_complete", { picks: s.count, titles: s.pool.length }); }, []);
-  const start = useCallback((depth) => {
-    const pool = data.slice(0, Math.min(depth.pool, data.length)); const personal = {};
-    pool.forEach((it) => { personal[slug(it.title)] = ratingOf(it); });
+  const start = useCallback(() => {
+    const pool = data.slice(); const personal = {}; // ALL titles in this category
+    pool.forEach((it) => { personal[slug(it.title)] = ratingOf(it); }); // seed every title from global ELO
     const idx = pool.map((_, i) => i); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-    const budget = Math.min(depth.budget, Math.max(1, pool.length * 2));
+    const budget = Math.min(PICK_CAP, pool.length * 2); // bounded: ~34 picks max
     q.current = { pool, personal, coverage: idx.map((i) => pool[i]), count: 0, budget, last: null };
-    logEvent("quiz_start", { depth: depth.key, pool: pool.length });
+    logEvent("quiz_start", { pool: pool.length, budget });
     setBudget(budget); setCount(0); setTiers(null); setStarted(true); setTimeout(nextPair, 0);
   }, [data, ratingOf, nextPair]);
   const choose = useCallback((winIdx) => {
@@ -61,8 +61,8 @@ export default function Quiz({ data, ratingOf, onVote }) {
   if (!started) return (
     <main style={S.stage}>
       <h1 style={S.h1}>Build your tier list</h1>
-      <p style={S.sub}>Starts from the global ranking — you just sharpen what you care about. Every pick also feeds the leaderboard.</p>
-      <div style={S.poolRow}>{DEPTHS.map((d) => (<button key={d.key} style={S.poolBtn} onClick={() => start(d)}><div style={S.poolNum}>{d.key}</div><div style={S.poolMeta}>{Math.min(d.pool, data.length)} titles · {Math.min(d.budget, data.length * 2)} picks</div></button>))}</div>
+      <p style={S.sub}>About {Math.min(PICK_CAP, data.length * 2)} quick picks, seeded by the global ranking — and we’ll place all {data.length} titles into an S–F tier list. Every pick also feeds the leaderboard.</p>
+      <div style={S.controls}><button style={S.ctaPrimary} className="ar-cta" onClick={start}>Build my tier list</button></div>
     </main>
   );
   if (tiers) return (

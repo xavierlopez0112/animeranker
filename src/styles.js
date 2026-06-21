@@ -14,6 +14,16 @@ export const CSS = `
 .ar-chipbar::-webkit-scrollbar{height:0}
 @media (max-width:760px){ .ar-arena{flex-direction:column;} }
 @media (prefers-reduced-motion: reduce){ .ar-card,.ar-cover{transition:none!important} }
+.ar-home{display:grid; grid-template-columns:1.25fr .9fr; gap:44px; align-items:start;}
+@media (max-width:880px){ .ar-home{grid-template-columns:1fr;} }
+.ar-detail-top{display:grid; grid-template-columns:300px 1fr; gap:36px; align-items:start;}
+@media (max-width:760px){ .ar-detail-top{grid-template-columns:1fr; max-width:360px;} }
+.ar-row-link{transition:background .15s ease;}
+.ar-row-link:hover{background:rgba(255,255,255,.05);}
+.ar-card-link{transition:transform .15s ease, border-color .15s ease;}
+.ar-card-link:hover{transform:translateY(-3px); border-color:var(--accent);}
+.ar-cta:hover{filter:brightness(1.08);}
+.ar-ghost:hover{border-color:var(--muted);}
 `;
 
 export const S = {
@@ -83,4 +93,43 @@ export const S = {
   warFill: { display: "flex", alignItems: "center", justifyContent: "flex-start", paddingLeft: 12, color: "#fff", fontWeight: 800, fontSize: 13, transition: "width .5s ease" },
   warFillR: { display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 12, color: "#fff", fontWeight: 800, fontSize: 13, transition: "width .5s ease" },
   warGlobal: { fontSize: 13, color: "var(--muted)", marginTop: 4 },
+
+  // ---- home / landing ----
+  homeWrap: { maxWidth: 1040, margin: "0 auto", padding: "56px 24px 0" },
+  hero: { textAlign: "left" },
+  heroEyebrow: { fontSize: 13, fontWeight: 700, letterSpacing: ".22em", color: "var(--muted)", marginBottom: 18 },
+  heroTitle: { fontSize: "clamp(40px, 7vw, 68px)", fontWeight: 800, letterSpacing: "-.03em", lineHeight: 1.02, margin: "0 0 16px" },
+  heroSub: { color: "var(--muted)", fontSize: 17, lineHeight: 1.5, maxWidth: 520, margin: "0 0 30px" },
+  heroCtas: { display: "flex", gap: 12, marginBottom: 22, flexWrap: "wrap" },
+  ctaPrimary: { background: "var(--accent)", color: "#fff", border: "1px solid var(--accent)", padding: "13px 28px", borderRadius: 999, fontSize: 15, fontWeight: 700, cursor: "pointer", textDecoration: "none", display: "inline-block" },
+  ctaGhost: { background: "transparent", color: "var(--text)", border: "1px solid var(--line)", padding: "13px 28px", borderRadius: 999, fontSize: 15, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-block" },
+  heroStatus: { fontFamily: "ui-monospace, monospace", fontSize: 12, color: "var(--faint)", letterSpacing: ".05em" },
+
+  top5Card: { background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, padding: 18 },
+  top5Head: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, fontWeight: 800, fontSize: 15 },
+  top5View: { color: "var(--accent)", fontSize: 12, fontWeight: 600, textDecoration: "none" },
+  top5Row: { display: "grid", gridTemplateColumns: "28px 44px 1fr auto", alignItems: "center", gap: 12, padding: "8px 6px", borderRadius: 10, textDecoration: "none", color: "inherit" },
+  top5Rank: { fontFamily: "ui-monospace, monospace", fontWeight: 800, fontSize: 16, textAlign: "center" },
+  top5Thumb: { width: 44, height: 58, borderRadius: 8, overflow: "hidden", flex: "0 0 auto" },
+  top5Name: { fontWeight: 700, fontSize: 14, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" },
+  top5Elo: { fontFamily: "ui-monospace, monospace", fontWeight: 800, fontSize: 15 },
+  shareRow: { display: "flex", gap: 8, marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)", flexWrap: "wrap" },
+  shareBtn: { flex: "1 1 auto", background: "transparent", border: "1px solid var(--line)", color: "var(--muted)", borderRadius: 999, padding: "8px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
+
+  // ---- anime detail ----
+  detailWrap: { maxWidth: 1040, margin: "0 auto", padding: "40px 24px 0" },
+  detailCover: { width: "100%", aspectRatio: "3/4", borderRadius: 18, overflow: "hidden", border: "1px solid var(--line)" },
+  detailEra: { display: "inline-block", fontSize: 11, fontWeight: 800, letterSpacing: ".08em", marginBottom: 12 },
+  detailTitle: { fontSize: "clamp(34px, 5vw, 52px)", fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.05, margin: "0 0 26px" },
+  statRow: { display: "flex", gap: 40, marginBottom: 30, flexWrap: "wrap" },
+  stat: {},
+  statValue: { fontSize: 42, fontWeight: 800, fontFamily: "ui-monospace, monospace", lineHeight: 1 },
+  statLabel: { fontSize: 11, letterSpacing: ".22em", color: "var(--muted)", marginTop: 6 },
+  nearbyHead: { fontSize: 13, fontWeight: 700, letterSpacing: ".18em", color: "var(--muted)", margin: "40px 0 16px" },
+  nearbyRow: { display: "flex", gap: 14, flexWrap: "wrap" },
+  nearbyCard: { width: 150, textDecoration: "none", color: "inherit", background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 14, padding: 10 },
+  nearbyRank: { fontFamily: "ui-monospace, monospace", color: "var(--muted)", fontWeight: 800, fontSize: 13, marginBottom: 6 },
+  nearbyThumb: { width: "100%", aspectRatio: "3/4", borderRadius: 10, overflow: "hidden", marginBottom: 8 },
+  nearbyName: { fontWeight: 700, fontSize: 13, lineHeight: 1.15 },
+  nearbyElo: { fontFamily: "ui-monospace, monospace", fontWeight: 800, fontSize: 14, marginTop: 4 },
 };

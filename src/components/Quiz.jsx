@@ -7,6 +7,7 @@ import { expected, K_LOCAL } from "../lib/elo.js";
 import { assignTiers } from "../lib/tiers.js";
 import { DEPTHS } from "../lib/quiz.js";
 import { logEvent } from "../lib/supabase.js";
+import { shareTierList } from "../lib/shareCard.js";
 
 export default function Quiz({ data, ratingOf, onVote }) {
   const q = useRef(null);
@@ -15,7 +16,17 @@ export default function Quiz({ data, ratingOf, onVote }) {
   const [count, setCount] = useState(0);
   const [budget, setBudget] = useState(0);
   const [tiers, setTiers] = useState(null);
+  const [sharing, setSharing] = useState(false);
   const pe = (it) => q.current.personal[slug(it.title)];
+
+  const shareTiers = async () => {
+    if (!tiers || sharing) return;
+    setSharing(true);
+    try {
+      await shareTierList(tiers, { picks: count, titles: q.current?.pool?.length ?? 0 });
+      logEvent("share", { type: "tier", picks: count });
+    } finally { setSharing(false); }
+  };
 
   const nextPair = useCallback(() => {
     const s = q.current; if (s.count >= s.budget) return finish();
@@ -59,7 +70,8 @@ export default function Quiz({ data, ratingOf, onVote }) {
       <h1 style={S.h1}>Your tier list</h1>
       <p style={S.sub}>{count} picks · seeded by the community, sharpened by you</p>
       <div style={S.controls}>
-        <button style={S.ghostBtn} onClick={() => { q.current.budget += 10; setBudget(q.current.budget); setTiers(null); setTimeout(nextPair, 0); }}>Refine more (+10)</button>
+        <button style={S.ghostBtn} onClick={shareTiers} disabled={sharing}>{sharing ? "Generating…" : "Share my tier list"}</button>
+        <button style={{ ...S.ghostBtn, marginLeft: 10 }} onClick={() => { q.current.budget += 10; setBudget(q.current.budget); setTiers(null); setTimeout(nextPair, 0); }}>Refine more (+10)</button>
         <button style={{ ...S.ghostBtn, marginLeft: 10 }} onClick={() => setStarted(false)}>Start over</button>
       </div>
       <TierList tiers={tiers} />

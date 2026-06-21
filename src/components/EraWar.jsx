@@ -3,6 +3,7 @@ import Cover from "./Cover.jsx";
 import { S } from "../styles.js";
 import { loadKey, saveKey } from "../lib/storage.js";
 import { supabase, hasBackend, logEvent } from "../lib/supabase.js";
+import { shareEraVerdict } from "../lib/shareCard.js";
 
 const WAR_BUDGET = 12;
 
@@ -16,6 +17,19 @@ export default function EraWar({ data, onVote }) {
   const [tally, setTally] = useState({ old: 0, new: 0 });
   const [global, setGlobal] = useState(null);
   const [done, setDone] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  const shareVerdict = async () => {
+    if (sharing) return;
+    const pT = tally.old + tally.new || 1; const pNew = Math.round((tally.new / pT) * 100);
+    const g = global || { old: 0, new: 0 }; const gT = g.old + g.new || 1; const gNew = Math.round((g.new / gT) * 100);
+    const verdict = pNew >= 60 ? "New Gen loyalist" : pNew <= 40 ? "Old Gen at heart" : "Split down the middle";
+    setSharing(true);
+    try {
+      await shareEraVerdict({ verdict, pNew, gNew, gTotal: gT });
+      logEvent("share", { type: "era", verdict });
+    } finally { setSharing(false); }
+  };
 
   useEffect(() => { if (!hasBackend) (async () => { eraRef.current = await loadKey("anime-era-v1", { old: 0, new: 0 }); })(); }, []);
 
@@ -72,7 +86,10 @@ export default function EraWar({ data, onVote }) {
         <p style={S.sub}>You sided with New Gen {pNew}% of the time · Old Gen {100 - pNew}%</p>
         <div style={S.warBar}><div style={{ ...S.warFill, width: `${pNew}%`, background: "var(--accent)" }}>{pNew >= 18 ? `New ${pNew}%` : ""}</div><div style={{ ...S.warFillR, width: `${100 - pNew}%`, background: "#5aa9ff" }}>{100 - pNew >= 18 ? `Old ${100 - pNew}%` : ""}</div></div>
         <div style={S.warGlobal}>The internet so far: <b style={{ color: "var(--accent)" }}>New Gen {gNew}%</b> · <b style={{ color: "#5aa9ff" }}>Old Gen {100 - gNew}%</b> <span style={{ color: "var(--faint)" }}>({gTotal} votes)</span></div>
-        <div style={S.controls}><button style={S.ghostBtn} onClick={start}>Go again</button></div>
+        <div style={S.controls}>
+          <button style={S.ghostBtn} onClick={shareVerdict} disabled={sharing}>{sharing ? "Generating…" : "Share my verdict"}</button>
+          <button style={{ ...S.ghostBtn, marginLeft: 10 }} onClick={start}>Go again</button>
+        </div>
       </main>
     );
   }

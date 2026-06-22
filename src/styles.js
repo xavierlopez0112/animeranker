@@ -69,6 +69,11 @@ export const S = {
   thumb: { width: 52, height: 52, borderRadius: 10, overflow: "hidden", flex: "0 0 auto" },
   boardName: { fontWeight: 700, fontSize: 15 }, boardStat: { fontSize: 12, fontFamily: "ui-monospace, monospace", textAlign: "right" },
   boardElo: { fontSize: 18, fontWeight: 800, textAlign: "right", fontFamily: "ui-monospace, monospace" },
+  pagerWrap: { display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 24 },
+  pagerBtn: { minWidth: 40, height: 40, padding: "0 12px", border: "1px solid var(--line)", background: "var(--panel)", color: "var(--muted)", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "ui-monospace, monospace" },
+  pagerBtnOn: { background: "var(--text)", color: "#0b0b10", borderColor: "var(--text)" },
+  pagerNext: { minWidth: 40, height: 40, padding: "0 16px", border: "1px solid var(--line)", background: "transparent", color: "var(--text)", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" },
+  pagerDisabled: { opacity: .4, cursor: "not-allowed" },
 
   tierWrap: { display: "flex", flexDirection: "column", gap: 8, textAlign: "left" },
   tierRow: { display: "flex", alignItems: "stretch", border: "1px solid var(--line)", borderRadius: 12, overflow: "hidden", background: "var(--panel)" },

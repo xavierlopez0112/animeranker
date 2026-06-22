@@ -125,7 +125,7 @@ export default function AnimeRanker() {
         <Routes>
           <Route path="/" element={<Home data={data} board={board} ratingOf={ratingOf} source={source} />} />
           <Route path="/vote" element={<Vote key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} totalVotes={totalVotes} />} />
-          <Route path="/leaderboard" element={<Leaderboard data={filtered} board={board} />} />
+          <Route path="/leaderboard" element={<Leaderboard key={cat} data={filtered} board={board} />} />
           <Route path="/quiz" element={<Quiz key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} />} />
           <Route path="/war" element={<EraWar data={data} onVote={recordVote} />} />
           <Route path="/anime/:slug" element={<AnimeDetail data={data} board={board} ratingOf={ratingOf} />} />

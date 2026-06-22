@@ -13,11 +13,38 @@ export function normLive(m) {
   return { id: String(m.id), title: m.title.english || m.title.romaji, image: m.coverImage.extraLarge || m.coverImage.large, genres, demo, year, era: year && year < ERA_CUT ? "old" : "new" };
 }
 
-export async function fetchAnime() {
-  const q = `query{p1:Page(page:1,perPage:50){media(type:ANIME,sort:POPULARITY_DESC,isAdult:false){id title{english romaji} coverImage{extraLarge large} genres startDate{year} tags{name}}} p2:Page(page:2,perPage:50){media(type:ANIME,sort:POPULARITY_DESC,isAdult:false){id title{english romaji} coverImage{extraLarge large} genres startDate{year} tags{name}}}}`;
-  const res = await fetch("https://graphql.anilist.co", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ query: q }) });
+const MEDIA = `id title{english romaji} coverImage{extraLarge large} genres startDate{year} tags{name}`;
+const POP_PAGES = 4;                                   // 4 × 50 = 200 popularity-sorted entries
+const GENRE_FILL = [["Sports", 18], ["Mecha", 12], ["Music", 10]]; // top-ups for thin categories
+
+async function gql(query) {
+  const res = await fetch("https://graphql.anilist.co", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ query }) });
   const j = await res.json();
-  return [...j.data.p1.media, ...j.data.p2.media].map(normLive);
+  if (j.errors) throw new Error(j.errors.map((e) => e.message).join("; "));
+  return j.data;
+}
+
+// Pull top popularity entries + targeted genre top-ups, deduped by AniList id.
+// (canonicalization later collapses each franchise's seasons into one title.)
+export async function fetchAnime() {
+  const popBlocks = Array.from({ length: POP_PAGES }, (_, i) =>
+    `p${i + 1}:Page(page:${i + 1},perPage:50){media(type:ANIME,sort:POPULARITY_DESC,isAdult:false){${MEDIA}}}`).join(" ");
+  const pop = await gql(`query{${popBlocks}}`);
+
+  let gen = {};
+  try {
+    const genreBlocks = GENRE_FILL.map(([g, n], i) =>
+      `g${i}:Page(page:1,perPage:${n}){media(type:ANIME,genre:"${g}",sort:POPULARITY_DESC,isAdult:false){${MEDIA}}}`).join(" ");
+    gen = await gql(`query{${genreBlocks}}`);
+  } catch (_) { /* genre fill is best-effort; popularity pull is what matters */ }
+
+  const seen = new Set(); const out = [];
+  for (const data of [pop, gen]) {
+    for (const key of Object.keys(data)) {
+      for (const m of data[key].media) { if (seen.has(m.id)) continue; seen.add(m.id); out.push(normLive(m)); }
+    }
+  }
+  return out;
 }
 
 // strip AniList's HTML description down to plain text, trimmed to a short synopsis

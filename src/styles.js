@@ -24,6 +24,9 @@ export const CSS = `
 .ar-card-link:hover{transform:translateY(-3px); border-color:var(--accent);}
 .ar-cta:hover{filter:brightness(1.08);}
 .ar-ghost:hover{border-color:var(--muted);}
+.ar-livedot{width:8px; height:8px; border-radius:50%; background:var(--up); display:inline-block; box-shadow:0 0 0 0 rgba(67,230,160,.55); animation:ar-pulse 1.6s ease-out infinite;}
+@keyframes ar-pulse{0%{box-shadow:0 0 0 0 rgba(67,230,160,.55);} 70%{box-shadow:0 0 0 7px rgba(67,230,160,0);} 100%{box-shadow:0 0 0 0 rgba(67,230,160,0);}}
+@media (prefers-reduced-motion: reduce){ .ar-livedot{animation:none;} }
 `;
 
 export const S = {
@@ -108,7 +111,8 @@ export const S = {
   heroCtas: { display: "flex", gap: 12, marginBottom: 22, flexWrap: "wrap" },
   ctaPrimary: { background: "var(--accent)", color: "#fff", border: "1px solid var(--accent)", padding: "13px 28px", borderRadius: 999, fontSize: 15, fontWeight: 700, cursor: "pointer", textDecoration: "none", display: "inline-block" },
   ctaGhost: { background: "transparent", color: "var(--text)", border: "1px solid var(--line)", padding: "13px 28px", borderRadius: 999, fontSize: 15, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-block" },
-  heroStatus: { fontFamily: "ui-monospace, monospace", fontSize: 12, color: "var(--faint)", letterSpacing: ".05em" },
+  heroStatus: { fontFamily: "ui-monospace, monospace", fontSize: 12, color: "var(--muted)", letterSpacing: ".05em", display: "inline-flex", alignItems: "center", gap: 9 },
+  shareNote: { fontFamily: "ui-monospace, monospace", fontSize: 12, color: "var(--up)", marginTop: 10, textAlign: "center" },
 
   top5Card: { background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, padding: 18 },
   top5Head: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, fontWeight: 800, fontSize: 15 },

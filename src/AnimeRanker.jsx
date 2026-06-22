@@ -115,7 +115,7 @@ export default function AnimeRanker() {
             <NavLink key={to} to={to} style={({ isActive }) => ({ ...S.tab, ...(isActive ? S.tabOn : {}), textDecoration: "none" })}>{label}</NavLink>
           ))}
         </nav>
-        <div style={S.sourceTag}>{source === "live" ? "live · anilist" : source === "fallback" ? "offline list" : "loading…"}</div>
+        <div style={S.sourceTag}>{source === "live" ? "live" : source === "fallback" ? "offline" : "loading…"}</div>
       </header>
 
       {data && scoped && <ChipBar data={data} cat={cat} setCat={setCat} />}

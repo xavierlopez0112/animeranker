@@ -2,7 +2,7 @@
 export const ERA_CUT = 2013; // Attack on Titan line: <2013 old gen, >=2013 new gen
 
 export const CATEGORIES = [
-  ["all", "All"], ["old", "Old Gen"], ["new", "New Gen"], ["shonen", "Shonen"], ["seinen", "Seinen"],
+  ["all", "All"], ["shonen", "Shonen"], ["seinen", "Seinen"],
   ["isekai", "Isekai"], ["fantasy", "Fantasy"], ["action", "Action"], ["romance", "Romance"],
   ["sol", "Slice of Life"], ["scifi", "Sci-Fi & Mecha"], ["sports", "Sports"], ["dark", "Dark & Psych"],
 ];

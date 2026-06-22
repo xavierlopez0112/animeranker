@@ -72,6 +72,8 @@ export default function AnimeRanker() {
   useEffect(() => { logEvent("session_start"); }, []);
 
   const ratingOf = useCallback((it) => board[slug(it.title)]?.elo ?? START_ELO, [board]);
+  const boardOf = useCallback((it) => board[slug(it.title)] || { elo: START_ELO, w: 0, l: 0 }, [board]);
+  const totalVotes = Object.values(board).reduce((s, r) => s + (r.w || 0), 0); // each vote = one win increment
 
   const recordVote = useCallback((winner, loser, mode = "vote") => {
     const wk = slug(winner.title), lk = slug(loser.title);
@@ -123,7 +125,7 @@ export default function AnimeRanker() {
       {data && (
         <Routes>
           <Route path="/" element={<Home data={data} board={board} ratingOf={ratingOf} source={source} />} />
-          <Route path="/vote" element={<Vote key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} />} />
+          <Route path="/vote" element={<Vote key={cat} data={filtered} boardOf={boardOf} onVote={recordVote} totalVotes={totalVotes} />} />
           <Route path="/leaderboard" element={<Leaderboard data={filtered} board={board} />} />
           <Route path="/quiz" element={<Quiz key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} />} />
           <Route path="/war" element={<EraWar data={data} onVote={recordVote} />} />

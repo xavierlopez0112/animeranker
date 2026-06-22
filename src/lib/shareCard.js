@@ -266,6 +266,48 @@ export function renderEraCard(result) {
   return c;
 }
 
+// --- MATCHUP CARD (Vote share) ----------------------------------------------
+export async function renderMatchupCard({ a, b, aPct, bPct }) {
+  const W = 1080, H = 1350, P = 72;
+  const c = makeCanvas(W, H), ctx = c.getContext("2d");
+  bgGlow(ctx, W, H);
+  wordmark(ctx, P, P + 28);
+
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.letterSpacing = "6px"; ctx.font = sans(700, 22); ctx.fillStyle = C.muted;
+  ctx.fillText("WHICH IS BETTER?", W / 2, 360);
+  ctx.letterSpacing = "0px";
+
+  const [imgA, imgB] = await Promise.all([loadImage(a.image), loadImage(b.image)]);
+  const cw = 430, ch = Math.round(cw * 4 / 3), gap = 40;
+  const x0 = (W - (cw * 2 + gap)) / 2, cy = 410;
+  drawTile(ctx, a, imgA, x0, cy, cw, ch);
+  drawTile(ctx, b, imgB, x0 + cw + gap, cy, cw, ch);
+
+  // VS badge
+  const vx = W / 2, vy = cy + ch / 2;
+  ctx.beginPath(); ctx.arc(vx, vy, 46, 0, Math.PI * 2);
+  ctx.fillStyle = C.bg; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.line; ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = sans(800, 22); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("VS", vx, vy + 1);
+
+  // per-title: title, WIN RATE label, big %
+  const centers = [x0 + cw / 2, x0 + cw + gap + cw / 2];
+  const items = [{ it: a, pct: aPct }, { it: b, pct: bPct }];
+  ctx.textBaseline = "alphabetic";
+  items.forEach(({ it, pct }, i) => {
+    const cxx = centers[i];
+    ctx.fillStyle = C.text; ctx.font = sans(800, 30); ctx.textAlign = "center";
+    ctx.fillText(lines(ctx, it.title, cw, 1)[0] || it.title, cxx, ch + cy + 54);
+    ctx.letterSpacing = "3px"; ctx.font = sans(700, 16); ctx.fillStyle = C.muted;
+    ctx.fillText("WIN RATE", cxx, ch + cy + 92); ctx.letterSpacing = "0px";
+    ctx.font = mono(800, 72); ctx.fillStyle = C.text;
+    ctx.fillText(`${pct}%`, cxx, ch + cy + 162);
+  });
+
+  footer(ctx, W, H);
+  return c;
+}
+
 // --- OG / marketing card (static, no external images) -----------------------
 export function renderOgCanvas() {
   const W = 1200, H = 630;
@@ -341,6 +383,13 @@ export async function shareEraVerdict(result) {
     text: `I'm ${result.verdict} — settle Old Gen vs New Gen at animeranker.vercel.app`,
   });
 }
+export async function shareMatchup({ a, b, aPct, bPct }) {
+  const canvas = await renderMatchupCard({ a, b, aPct, bPct });
+  return shareCanvas(canvas, "animeranker-matchup.png", {
+    title: `${a.title} vs ${b.title}`,
+    text: `${a.title} ${aPct}% vs ${b.title} ${bPct}% win rate — vote at animeranker.vercel.app`,
+  });
+}
 
 // --- dev-only hooks for previewing/generating cards (stripped from prod) -----
 if (typeof window !== "undefined" && import.meta.env && import.meta.env.DEV) {
@@ -355,5 +404,12 @@ if (typeof window !== "undefined" && import.meta.env && import.meta.env.DEV) {
   window.__previewTier = async () => { show(await renderTierCard(await sampleTiers(), { picks: 26, titles: 40 })); return "tier"; };
   window.__previewEra = () => { show(renderEraCard({ verdict: "New Gen loyalist", pNew: 67, gNew: 54, gTotal: 1284 })); return "era"; };
   window.__previewOg = () => { show(renderOgCanvas()); return "og"; };
+  window.__previewMatchup = async () => {
+    const url = import.meta.env.VITE_SUPABASE_URL, key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const r = await fetch(`${url}/rest/v1/media?select=title,image&limit=2`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    const [a, b] = (await r.json()).map((m) => ({ title: m.title, image: m.image }));
+    show(await renderMatchupCard({ a, b, aPct: 73, bPct: 61 }));
+    return "matchup";
+  };
   window.__ogDataURL = () => renderOgCanvas().toDataURL("image/png");
 }

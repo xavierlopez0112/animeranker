@@ -1,4 +1,5 @@
 // tier-quiz config -----------------------------------------------------------
-// One bounded run that places EVERY title (seeded from global ELO) but caps the
-// number of head-to-head picks so the input stays short.
-export const PICK_CAP = 34;
+// Picks scale with the section size so every title gets compared a few times and
+// the result is a full tier list of all titles in the category. "Done" lets you
+// stop early at any point.
+export const PICKS_PER_TITLE = 2;

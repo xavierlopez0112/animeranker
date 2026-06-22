@@ -5,7 +5,7 @@ import { S } from "../styles.js";
 import { slug } from "../lib/slug.js";
 import { expected, K_LOCAL } from "../lib/elo.js";
 import { assignTiers } from "../lib/tiers.js";
-import { PICK_CAP } from "../lib/quiz.js";
+import { PICKS_PER_TITLE } from "../lib/quiz.js";
 import { logEvent } from "../lib/supabase.js";
 import { shareTierList } from "../lib/shareCard.js";
 
@@ -41,7 +41,7 @@ export default function Quiz({ data, ratingOf, onVote }) {
     const pool = data.slice(); const personal = {}; // ALL titles in this category
     pool.forEach((it) => { personal[slug(it.title)] = ratingOf(it); }); // seed every title from global ELO
     const idx = pool.map((_, i) => i); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-    const budget = Math.min(PICK_CAP, pool.length * 2); // bounded: ~34 picks max
+    const budget = pool.length * PICKS_PER_TITLE; // scales with the whole section
     q.current = { pool, personal, coverage: idx.map((i) => pool[i]), count: 0, budget, last: null };
     logEvent("quiz_start", { pool: pool.length, budget });
     setBudget(budget); setCount(0); setTiers(null); setStarted(true); setTimeout(nextPair, 0);
@@ -61,7 +61,7 @@ export default function Quiz({ data, ratingOf, onVote }) {
   if (!started) return (
     <main style={S.stage}>
       <h1 style={S.h1}>Build your tier list</h1>
-      <p style={S.sub}>About {Math.min(PICK_CAP, data.length * 2)} quick picks, seeded by the global ranking — and we’ll place all {data.length} titles into an S–F tier list. Every pick also feeds the leaderboard.</p>
+      <p style={S.sub}>Rank all {data.length} titles into an S–F tier list (~{data.length * PICKS_PER_TITLE} picks, seeded by the global ranking) — hit “Done” anytime to see your tiers. Every pick also feeds the leaderboard.</p>
       <div style={S.controls}><button style={S.ctaPrimary} className="ar-cta" onClick={start}>Build my tier list</button></div>
     </main>
   );

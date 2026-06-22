@@ -97,6 +97,8 @@ export const S = {
   warSide: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 14, padding: "16px 22px", maxWidth: 280 },
   warDot: { width: 12, height: 12, borderRadius: "50%" },
   warEx: { fontSize: 11, color: "var(--muted)", textAlign: "center" },
+  warSideCover: { width: 150, aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", border: "1px solid var(--line)", position: "relative" },
+  warSideName: { position: "absolute", left: 10, right: 10, bottom: 8, fontSize: 13, fontWeight: 800, textAlign: "left", textShadow: "0 2px 10px rgba(0,0,0,.75)" },
   warBar: { display: "flex", height: 44, borderRadius: 12, overflow: "hidden", maxWidth: 560, margin: "0 auto 16px", border: "1px solid var(--line)" },
   warFill: { display: "flex", alignItems: "center", justifyContent: "flex-start", paddingLeft: 12, color: "#fff", fontWeight: 800, fontSize: 13, transition: "width .5s ease" },
   warFillR: { display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 12, color: "#fff", fontWeight: 800, fontSize: 13, transition: "width .5s ease" },

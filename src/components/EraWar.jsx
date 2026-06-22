@@ -10,6 +10,8 @@ const WAR_BUDGET = 12;
 export default function EraWar({ data, onVote }) {
   const oldPool = data.filter((d) => d.era === "old");
   const newPool = data.filter((d) => d.era === "new");
+  const oldRep = data.find((d) => d.id === "naruto") || oldPool[0];
+  const newRep = data.find((d) => d.id === "jujutsu-kaisen") || newPool[0];
   const eraRef = useRef({ old: 0, new: 0 }); // local fallback tally (no backend)
   const [started, setStarted] = useState(false);
   const [pair, setPair] = useState(null);
@@ -69,8 +71,16 @@ export default function EraWar({ data, onVote }) {
       <h1 style={S.h1}>Old Gen <span style={{ color: "var(--muted)" }}>vs</span> New Gen</h1>
       <p style={S.sub}>Each round pits a pre-2013 classic against a 2013-or-later title. {WAR_BUDGET} picks decide where your loyalty really lies — and your votes move the global tally.</p>
       <div style={S.warLegend}>
-        <div style={S.warSide}><div style={{ ...S.warDot, background: "#5aa9ff" }} /><b>Old Gen</b><span style={S.warEx}>Naruto · Bleach · One Piece · DBZ · Death Note · the Big 3 era</span></div>
-        <div style={S.warSide}><div style={{ ...S.warDot, background: "var(--accent)" }} /><b>New Gen</b><span style={S.warEx}>AoT · Demon Slayer · JJK · Chainsaw Man · Frieren · the modern boom</span></div>
+        <div style={S.warSide}>
+          {oldRep && <div style={S.warSideCover}><Cover item={oldRep} /><div style={S.cardShade} /><div style={S.warSideName}>{oldRep.title}</div></div>}
+          <b style={{ marginTop: 10, color: "#5aa9ff" }}>Old Gen</b>
+          <span style={S.warEx}>pre-2013 classics</span>
+        </div>
+        <div style={S.warSide}>
+          {newRep && <div style={S.warSideCover}><Cover item={newRep} /><div style={S.cardShade} /><div style={S.warSideName}>{newRep.title}</div></div>}
+          <b style={{ marginTop: 10, color: "var(--accent)" }}>New Gen</b>
+          <span style={S.warEx}>2013 &amp; beyond</span>
+        </div>
       </div>
       <div style={S.controls}><button style={{ ...S.ghostBtn, fontSize: 16, padding: "14px 30px" }} onClick={start}>Start the war</button></div>
     </main>

@@ -17,7 +17,7 @@ contestability* — fast, opinionated choices people want to argue about and sha
 ## Stack
 - **Frontend:** React 18 + Vite, **React Router** for pages. Styling is inline style
   objects + one CSS token string (no Tailwind). Modular structure: `data/`, `lib/`, `components/`.
-- **Data source:** AniList GraphQL API (top ~100 by popularity) + a baked-in offline fallback list.
+- **Data source:** AniList GraphQL API (top ~200 by popularity + targeted genre top-ups for thin categories) + a baked-in offline fallback list.
 - **Backend:** Supabase (Postgres) — shared scores, server-side scoring, analytics.
 - **Hosting:** Vercel, auto-deploys on every `git push` to `main`. A `vercel.json` SPA
   rewrite makes deep links (e.g. `/anime/attack-on-titan`) survive a refresh.
@@ -69,8 +69,9 @@ Real, shareable URLs via React Router:
 - **Row Level Security:** the public can read the scoreboard and call the vote/log
   functions, but cannot directly write/delete anything or read the raw vote log.
 - **Catalog curation:** AniList's per-season entries (e.g. 6 separate "Attack on Titan"
-  seasons) are collapsed into **~87 canonical franchises** via a shared `canon.js` module
-  used by both the seeder and the frontend (so their slugs always agree).
+  seasons) are collapsed into **~159 canonical franchises** via a shared `canon.js` module
+  used by both the seeder and the frontend (so their slugs always agree). Targeted genre
+  queries fill thin categories (e.g. Sports went from 1 to ~8 titles).
 
 ### Analytics (queryable in SQL)
 - `events` + `log_event` track: **unique visitors**, sessions, tab/mode usage, quiz
@@ -93,6 +94,7 @@ Real, shareable URLs via React Router:
 - `reset.js` — restore a pristine state (`--yes` guard).
 - `peek.js` — CLI analytics snapshot.
 - `cleanup-token.js` — remove a single test session's analytics noise.
+- `seed-diff.js` — preview a re-seed's added/kept/pruned titles before writing.
 
 ## Known limitations / decisions made
 - **"Unique visitors" = unique browsers**, not unique humans (incognito / cleared

@@ -22,7 +22,7 @@ import { fetchAnime } from "../src/data/anilist.js";
 import { FALLBACK } from "../src/data/fallback.js";
 import { ERA_CUT } from "../src/data/categories.js";
 import { slug } from "../src/lib/slug.js";
-import { canonicalTitle } from "../src/lib/canon.js";
+import { canonicalTitle, IMAGE_OVERRIDES } from "../src/lib/canon.js";
 
 const DRY = process.argv.includes("--dry-run");
 
@@ -66,7 +66,7 @@ const media = [...groups.values()].map((g) => ({
   id: g.id,
   anilist_id: /^\d+$/.test(g.flagship.id) ? Number(g.flagship.id) : null,
   title: g.title,
-  image: g.flagship.image ?? null,
+  image: IMAGE_OVERRIDES[g.id] || g.flagship.image || null,
   year: g.minYear,
   era: (g.minYear != null && g.minYear < ERA_CUT) ? "old" : "new",
   demo: g.flagship.demo ?? null,

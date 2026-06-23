@@ -124,6 +124,12 @@ export function canonicalTitle(rawTitle) {
   return s || t;
 }
 
+// Per-franchise cover overrides (keyed by canonical slug) — used when the
+// flagship entry's art isn't the one we want (e.g. a merged movie's poster).
+export const IMAGE_OVERRIDES = {
+  "neon-genesis-evangelion": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx30-AI1zr74Dh4ye.jpg",
+};
+
 // Collapse a list of normalized items (per-season AniList entries) into the same
 // canonical franchises the backend stores: deduped by canonical slug, keeping
 // the first (most popular) entry's art/genres and the EARLIEST season's year/era.
@@ -142,7 +148,7 @@ export function canonicalizeList(items) {
     id: g.id,
     anilist_id: /^\d+$/.test(g.flagship.id) ? Number(g.flagship.id) : null,
     title: g.title,
-    image: g.flagship.image ?? null,
+    image: IMAGE_OVERRIDES[g.id] || g.flagship.image || null,
     year: g.minYear,
     era: (g.minYear != null && g.minYear < ERA_CUT) ? "old" : "new",
     demo: g.flagship.demo ?? null,

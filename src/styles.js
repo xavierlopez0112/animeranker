@@ -20,6 +20,7 @@ export const CSS = `
 @media (max-width:980px){ .ar-detail-top{grid-template-columns:1fr;} .ar-detail-cover{max-width:300px;} }
 .ar-row-link{transition:background .15s ease;}
 .ar-row-link:hover{background:rgba(255,255,255,.05);}
+.ar-ghost:disabled{opacity:.6; cursor:default;}
 .ar-card-link{transition:transform .15s ease, border-color .15s ease;}
 .ar-card-link:hover{transform:translateY(-3px); border-color:var(--accent);}
 .ar-cta:hover{filter:brightness(1.08);}

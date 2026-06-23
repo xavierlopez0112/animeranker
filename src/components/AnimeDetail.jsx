@@ -3,7 +3,10 @@ import { useParams, Link } from "react-router-dom";
 import Cover from "./Cover.jsx";
 import { S } from "../styles.js";
 import { START_ELO } from "../lib/elo.js";
+import { slug } from "../lib/slug.js";
 import { fetchDescription } from "../data/anilist.js";
+import { openTitleCard } from "../lib/shareCard.js";
+import { logEvent } from "../lib/supabase.js";
 
 const GENRE_LABEL = { sliceoflife: "Slice of Life", scifi: "Sci-Fi", action: "Action", fantasy: "Fantasy", romance: "Romance", mecha: "Mecha", sports: "Sports", horror: "Horror", psychological: "Psychological", thriller: "Thriller", supernatural: "Supernatural", mystery: "Mystery", drama: "Drama", comedy: "Comedy", adventure: "Adventure", music: "Music", isekai: "Isekai" };
 const DEMO_LABEL = { shonen: "Shonen", seinen: "Seinen", shojo: "Shoujo", josei: "Josei", kids: "Kids" };
@@ -42,6 +45,9 @@ export default function AnimeDetail({ data, board, ratingOf }) {
   const it = idx >= 0 ? sorted[idx] : null;
 
   const [desc, setDesc] = useState(null); // null = loading, "" = none
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const flash = (msg) => { setNote(msg); setTimeout(() => setNote(""), 2400); };
   useEffect(() => {
     if (!it) return;
     let alive = true;
@@ -63,6 +69,18 @@ export default function AnimeDetail({ data, board, ratingOf }) {
   const rankBy = new Map(sorted.map((d, i) => [d.id, i + 1]));
   const similar = similarShows(it, data, ratingOf);
 
+  const shareCard = async () => {
+    if (busy) return;
+    const win = window.open("", "_blank"); // open synchronously so the popup blocker allows it
+    setBusy(true);
+    logEvent("share", { type: "title", slug: slug(it.title), rank: idx + 1 });
+    const res = await openTitleCard(it, { rank: idx + 1, elo: rec.elo, votes: games }, win);
+    setBusy(false);
+    if (res === "opened") flash("Opened your card in a new tab — right-click to save it.");
+    else if (res === "downloaded") flash("Pop-up blocked, so it downloaded instead.");
+    else if (res === "error") flash("Couldn't make the card — try again.");
+  };
+
   return (
     <main style={S.detailWrap}>
       <div className="ar-detail-top">
@@ -78,7 +96,11 @@ export default function AnimeDetail({ data, board, ratingOf }) {
             <Stat label="ELO" value={rec.elo} accent />
             <Stat label="VOTES" value={games} />
           </div>
-          <div style={S.controls}><Link to="/vote" style={S.ctaPrimary} className="ar-cta">Vote on matchups</Link></div>
+          <div style={{ ...S.controls, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <Link to="/vote" style={S.ctaPrimary} className="ar-cta">Vote on matchups</Link>
+            <button onClick={shareCard} disabled={busy} style={S.ctaGhost} className="ar-ghost">{busy ? "Building…" : "Share card ↗"}</button>
+          </div>
+          {note && <div style={{ ...S.shareNote, textAlign: "left" }}>{note}</div>}
           {games === 0 && <p style={{ ...S.sub, marginTop: 16, textAlign: "left" }}>No votes yet — seeded at {START_ELO}. Be the first to rank it.</p>}
         </div>
 

@@ -8,7 +8,7 @@
 // cover that can't be fetched CORS-clean falls back to the same hashed-gradient
 // tile the app's <Cover> uses, so export never fails on a tainted canvas.
 
-import { hashHue } from "./slug.js";
+import { hashHue, slug } from "./slug.js";
 import { assignTiers } from "./tiers.js";
 
 const C = {
@@ -266,6 +266,86 @@ export function renderEraCard(result) {
   return c;
 }
 
+// --- TITLE CARD -------------------------------------------------------------
+// A single title's standing, mirroring the detail hero: cover on the left;
+// era eyebrow, title, and RANK / ELO / VOTES on the right. The wordmark + URL
+// sit underneath the cover. meta = { rank, elo, votes }.
+export async function renderTitleCard(item, meta = {}) {
+  const W = 1080, H = 1080, P = 80;
+  const c = makeCanvas(W, H), ctx = c.getContext("2d");
+  bgGlow(ctx, W, H);
+
+  const isNew = item.era === "new";
+  const eraColor = isNew ? C.accent : C.oldBlue;
+
+  // left column: cover + (wordmark + url) underneath it, vertically centered
+  const coverW = 360, coverH = Math.round(coverW / 0.75); // 3/4 portrait → 480
+  const capGap = 64, capH = 84;                            // logo + url block
+  const blockH = coverH + capGap + capH;
+  const coverX = P, coverY = Math.round((H - blockH) / 2);
+
+  const img = await loadImage(item.image);
+  ctx.save();
+  roundRect(ctx, coverX, coverY, coverW, coverH, 20); ctx.clip();
+  if (img) {
+    drawCover(ctx, img, coverX, coverY, coverW, coverH);
+  } else {
+    const hue = hashHue(item.title || "");
+    const g = ctx.createLinearGradient(coverX, coverY, coverX + coverW, coverY + coverH);
+    g.addColorStop(0, `hsl(${hue} 55% 22%)`);
+    g.addColorStop(1, `hsl(${(hue + 40) % 360} 60% 12%)`);
+    ctx.fillStyle = g; ctx.fillRect(coverX, coverY, coverW, coverH);
+    ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.font = sans(700, 40);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const ls = lines(ctx, item.title || "", coverW - 40, 3);
+    ls.forEach((ln, i) => ctx.fillText(ln, coverX + coverW / 2, coverY + coverH / 2 + (i - (ls.length - 1) / 2) * 48));
+  }
+  ctx.restore();
+  ctx.save();
+  roundRect(ctx, coverX, coverY, coverW, coverH, 20);
+  ctx.lineWidth = 1; ctx.strokeStyle = C.line; ctx.stroke();
+  ctx.restore();
+
+  // wordmark + url, underneath the cover, left-aligned to it
+  const capY = coverY + coverH + capGap;
+  wordmark(ctx, coverX, capY, 30);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.font = mono(600, 26); ctx.fillStyle = C.faint;
+  ctx.fillText("animeranker.net", coverX, capY + 42);
+
+  // right column: era eyebrow, title, stats
+  const rightX = coverX + coverW + 72;
+  const rightW = W - rightX - P;
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+
+  let by = coverY + 40; // eyebrow baseline
+  ctx.letterSpacing = "5px"; ctx.font = sans(700, 22); ctx.fillStyle = eraColor;
+  ctx.fillText(`${isNew ? "NEW GEN" : "OLD GEN"}${item.year ? ` · ${item.year}` : ""}`, rightX, by);
+  ctx.letterSpacing = "0px";
+
+  by += 92; // first title baseline
+  ctx.font = sans(800, 76); ctx.fillStyle = C.text;
+  const tl = lines(ctx, item.title || "", rightW, 2);
+  const lh = 84;
+  tl.forEach((ln, i) => ctx.fillText(ln, rightX, by + i * lh));
+
+  by += (tl.length - 1) * lh + 132; // stat value baseline
+  const stats = [["RANK", `#${meta.rank}`, false], ["ELO", String(meta.elo), true], ["VOTES", String(meta.votes), false]];
+  let sx = rightX;
+  for (const [label, value, accent] of stats) {
+    ctx.font = mono(800, 58); ctx.fillStyle = accent ? C.accent : C.text;
+    ctx.fillText(value, sx, by);
+    const vw = ctx.measureText(value).width;
+    ctx.letterSpacing = "2px"; ctx.font = sans(700, 18); ctx.fillStyle = C.muted;
+    ctx.fillText(label, sx, by + 34);
+    const lw = ctx.measureText(label).width;
+    ctx.letterSpacing = "0px";
+    sx += Math.max(vw, lw) + 48;
+  }
+
+  return c;
+}
+
 // --- OG / marketing card (static, no external images) -----------------------
 export function renderOgCanvas() {
   const W = 1200, H = 630;
@@ -341,6 +421,23 @@ export async function shareEraVerdict(result) {
     text: `I'm ${result.verdict} — settle Old Gen vs New Gen at animeranker.vercel.app`,
   });
 }
+// Render the title card and hand back a blob URL for it. The caller is expected
+// to open a blank tab *synchronously* on the user's click (so the popup blocker
+// allows it) and pass it in; we then point that tab at the image, which the user
+// can right-click to save. If no tab is available (blocked), we fall back to a
+// direct download so the action never silently fails.
+export async function openTitleCard(item, meta, win) {
+  const canvas = await renderTitleCard(item, meta);
+  const blob = await canvasToBlob(canvas);
+  if (!blob) { if (win && !win.closed) win.close(); return "error"; }
+  // Don't revoke: the new tab needs the URL to stay alive to keep showing the image.
+  const url = URL.createObjectURL(blob);
+  if (win && !win.closed) { win.location.href = url; return "opened"; }
+  const a = document.createElement("a");
+  a.href = url; a.download = `animeranker-${slug(item.title) || "title"}.png`;
+  document.body.appendChild(a); a.click(); a.remove();
+  return "downloaded";
+}
 
 // --- dev-only hooks for previewing/generating cards (stripped from prod) -----
 if (typeof window !== "undefined" && import.meta.env && import.meta.env.DEV) {
@@ -355,5 +452,6 @@ if (typeof window !== "undefined" && import.meta.env && import.meta.env.DEV) {
   window.__previewTier = async () => { show(await renderTierCard(await sampleTiers(), { picks: 26, titles: 40 })); return "tier"; };
   window.__previewEra = () => { show(renderEraCard({ verdict: "New Gen loyalist", pNew: 67, gNew: 54, gTotal: 1284 })); return "era"; };
   window.__previewOg = () => { show(renderOgCanvas()); return "og"; };
+  window.__previewTitle = async () => { show(await renderTitleCard({ title: "Solo Leveling", image: null, era: "new", year: 2024 }, { rank: 2, elo: 1105, votes: 7 })); return "title"; };
   window.__ogDataURL = () => renderOgCanvas().toDataURL("image/png");
 }

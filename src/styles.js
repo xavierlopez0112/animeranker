@@ -33,7 +33,7 @@ export const CSS = `
 export const S = {
   root: { minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif", paddingBottom: 70 },
   header: { display: "flex", alignItems: "center", gap: 16, padding: "18px 28px", borderBottom: "1px solid var(--line)", position: "sticky", top: 0, background: "rgba(11,11,16,.85)", backdropFilter: "blur(10px)", zIndex: 5 },
-  brand: { fontWeight: 800, letterSpacing: ".12em", fontSize: 18 }, brandMark: { color: "var(--accent)", marginRight: 6 },
+  brand: { fontWeight: 800, letterSpacing: ".12em", fontSize: 18 },
   nav: { display: "flex", gap: 6, margin: "0 auto", background: "var(--panel)", padding: 5, borderRadius: 999, border: "1px solid var(--line)" },
   tab: { border: "none", background: "transparent", color: "var(--muted)", fontSize: 14, fontWeight: 600, padding: "8px 16px", borderRadius: 999, cursor: "pointer" },
   tabOn: { background: "var(--text)", color: "#0b0b10" },

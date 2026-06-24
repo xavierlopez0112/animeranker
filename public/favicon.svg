@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="AnimeRanker">
+  <style>
+    .ink { stroke: #17151F; }
+    @media (prefers-color-scheme: dark) { .ink { stroke: #F3F1F5; } }
+  </style>
+  <rect x="29.5" y="12" width="5" height="40" rx="2.5" fill="#EC2E7E"/>
+  <path class="ink" d="M14 16 L26 32 L14 48" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="ink" d="M50 16 L38 32 L50 48" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

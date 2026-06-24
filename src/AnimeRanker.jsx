@@ -31,6 +31,7 @@ import Quiz from "./components/Quiz.jsx";
 import EraWar from "./components/EraWar.jsx";
 import AnimeDetail from "./components/AnimeDetail.jsx";
 import ChipBar from "./components/ChipBar.jsx";
+import Logo from "./components/Logo.jsx";
 
 // Load the global board: from Supabase `ratings` if available, else local.
 async function loadBoard() {
@@ -107,8 +108,8 @@ export default function AnimeRanker() {
     <div style={S.root}>
       <style>{CSS}</style>
       <header style={S.header}>
-        <Link to="/" style={{ ...S.brand, textDecoration: "none", color: "var(--text)" }}>
-          <span style={S.brandMark}>◆</span> ANIME<span style={{ color: "var(--accent)" }}>RANKER</span>
+        <Link to="/" aria-label="AnimeRanker home" style={{ ...S.brand, display: "inline-flex", alignItems: "center", textDecoration: "none", color: "var(--text)" }}>
+          <Logo height={28} />
         </Link>
         <nav style={S.nav}>
           {NAV.map(([to, label]) => (

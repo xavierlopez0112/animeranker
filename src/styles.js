@@ -13,6 +13,14 @@ export const CSS = `
 .ar-card:not(:disabled):hover .ar-cover{transform:scale(1.04);}
 .ar-chipbar::-webkit-scrollbar{height:0}
 @media (max-width:760px){ .ar-arena{flex-direction:column;} }
+/* Mobile header: stack logo on its own row, nav pill full width as an equal-width segmented control. */
+@media (max-width:760px){
+  .ar-header{ flex-wrap:wrap !important; gap:10px 12px !important; padding:14px 16px !important; }
+  .ar-brand{ order:1; }
+  .ar-sourcetag{ order:2; margin-left:auto !important; }
+  .ar-nav{ order:3; flex-basis:100%; width:100%; margin:0 !important; gap:4px !important; padding:4px !important; }
+  .ar-tab{ flex:1 1 0; min-width:0; text-align:center; white-space:nowrap; padding:8px 3px !important; font-size:12px !important; }
+}
 @media (prefers-reduced-motion: reduce){ .ar-card,.ar-cover{transition:none!important} }
 .ar-home{display:grid; grid-template-columns:1.25fr .9fr; gap:44px; align-items:start;}
 @media (max-width:880px){ .ar-home{grid-template-columns:1fr;} }
@@ -144,6 +152,21 @@ export const S = {
   nearbyThumb: { width: "100%", aspectRatio: "3/4", borderRadius: 10, overflow: "hidden", marginBottom: 8 },
   nearbyName: { fontWeight: 700, fontSize: 13, lineHeight: 1.15 },
   nearbyElo: { fontFamily: "ui-monospace, monospace", fontWeight: 800, fontSize: 14, marginTop: 4 },
+
+  // ---- footer ----
+  footer: { maxWidth: 1040, margin: "80px auto 0", padding: "28px 24px 36px", borderTop: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, flexWrap: "wrap" },
+  footerLinks: { display: "flex", gap: 22, flexWrap: "wrap", alignItems: "center" },
+  footerLink: { color: "var(--muted)", fontSize: 13, fontWeight: 600, textDecoration: "none" },
+  footerMeta: { fontSize: 12, color: "var(--faint)", fontFamily: "ui-monospace, monospace", letterSpacing: ".03em", lineHeight: 1.6 },
+
+  // ---- legal pages ----
+  legalWrap: { maxWidth: 760, margin: "0 auto", padding: "48px 24px 0", textAlign: "left" },
+  legalTitle: { fontSize: "clamp(32px, 5vw, 46px)", fontWeight: 800, letterSpacing: "-.02em", margin: "0 0 6px" },
+  legalUpdated: { fontSize: 12, color: "var(--faint)", fontFamily: "ui-monospace, monospace", letterSpacing: ".05em", margin: "0 0 28px" },
+  legalDraft: { border: "1px solid var(--accent)", background: "rgba(255,46,116,.08)", borderRadius: 12, padding: "12px 16px", fontSize: 13, lineHeight: 1.55, color: "var(--text)", margin: "0 0 40px" },
+  legalH2: { fontSize: 18, fontWeight: 800, letterSpacing: "-.01em", margin: "34px 0 10px" },
+  legalP: { fontSize: 15, lineHeight: 1.65, color: "var(--muted)", margin: "0 0 12px" },
+  legalList: { margin: "0 0 12px", paddingLeft: 20, color: "var(--muted)", fontSize: 15, lineHeight: 1.65 },
 
   // ---- detail: description + info panel ----
   infoPanel: { background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16, padding: 20 },

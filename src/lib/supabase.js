@@ -35,6 +35,11 @@ export const voterToken = getVisitorId();
 
 // Fire-and-forget analytics event via the log_event RPC. No-op without a
 // backend; failures are swallowed so analytics never disrupt the UI.
+//
+// DEFERRED (flagged, not active): if event volume grows, add a client-side
+// per-type sample gate HERE (drop 1-in-N before the network call, cheaper than
+// server-side retention). `session_start` is PERMANENTLY EXEMPT — it's the
+// unique-visitor metric and must always be logged in full.
 export function logEvent(type, props = {}) {
   if (!hasBackend) return;
   supabase.rpc("log_event", {

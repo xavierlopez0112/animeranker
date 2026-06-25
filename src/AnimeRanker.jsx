@@ -32,16 +32,30 @@ import EraWar from "./components/EraWar.jsx";
 import AnimeDetail from "./components/AnimeDetail.jsx";
 import ChipBar from "./components/ChipBar.jsx";
 import Logo from "./components/Logo.jsx";
+import Footer from "./components/Footer.jsx";
+import LegalPage from "./components/LegalPage.jsx";
 
-// Load the global board: from Supabase `ratings` if available, else local.
+function rowsToBoard(rows) {
+  const board = {};
+  for (const r of rows) board[r.media_id] = { elo: r.elo, w: r.wins, l: r.losses };
+  return board;
+}
+
+// Load the global board. Prefer the CDN-cached /api/leaderboard proxy; fall back
+// to a direct Supabase read (e.g. local `vite dev`, where /api isn't served), then
+// to local storage. Reads only — the cast_vote write path is unchanged.
 async function loadBoard() {
+  try {
+    const res = await fetch("/api/leaderboard");
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) return rowsToBoard(data);
+    }
+  } catch (_) { /* proxy unavailable (e.g. vite dev) — fall through to direct read */ }
+
   if (hasBackend) {
     const { data, error } = await supabase.from("ratings").select("media_id, elo, wins, losses");
-    if (!error && data) {
-      const board = {};
-      for (const r of data) board[r.media_id] = { elo: r.elo, w: r.wins, l: r.losses };
-      return board;
-    }
+    if (!error && data) return rowsToBoard(data);
   }
   return loadKey("anime-elo-v3", {});
 }
@@ -107,32 +121,41 @@ export default function AnimeRanker() {
   return (
     <div style={S.root}>
       <style>{CSS}</style>
-      <header style={S.header}>
-        <Link to="/" aria-label="AnimeRanker home" style={{ ...S.brand, display: "inline-flex", alignItems: "center", textDecoration: "none", color: "var(--text)" }}>
+      <header className="ar-header" style={S.header}>
+        <Link to="/" aria-label="AnimeRanker home" className="ar-brand" style={{ ...S.brand, display: "inline-flex", alignItems: "center", textDecoration: "none", color: "var(--text)" }}>
           <Logo height={28} />
         </Link>
-        <nav style={S.nav}>
+        <nav className="ar-nav" style={S.nav}>
           {NAV.map(([to, label]) => (
-            <NavLink key={to} to={to} style={({ isActive }) => ({ ...S.tab, ...(isActive ? S.tabOn : {}), textDecoration: "none" })}>{label}</NavLink>
+            <NavLink key={to} to={to} className="ar-tab" style={({ isActive }) => ({ ...S.tab, ...(isActive ? S.tabOn : {}), textDecoration: "none" })}>{label}</NavLink>
           ))}
         </nav>
-        <div style={S.sourceTag}>{source === "live" ? "live" : source === "fallback" ? "offline" : "loading…"}</div>
+        <div className="ar-sourcetag" style={S.sourceTag}>{source === "live" ? "live" : source === "fallback" ? "offline" : "loading…"}</div>
       </header>
 
       {data && scoped && <ChipBar data={data} cat={cat} setCat={setCat} />}
 
-      {!data && <div style={S.loading}>Loading the roster…</div>}
-      {data && (
-        <Routes>
-          <Route path="/" element={<Home data={data} board={board} ratingOf={ratingOf} source={source} />} />
-          <Route path="/vote" element={<Vote key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} totalVotes={totalVotes} />} />
-          <Route path="/leaderboard" element={<Leaderboard key={cat} data={filtered} board={board} />} />
-          <Route path="/quiz" element={<Quiz key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} />} />
-          <Route path="/war" element={<EraWar data={data} onVote={recordVote} />} />
-          <Route path="/anime/:slug" element={<AnimeDetail data={data} board={board} ratingOf={ratingOf} />} />
-          <Route path="*" element={<Home data={data} board={board} ratingOf={ratingOf} source={source} />} />
-        </Routes>
-      )}
+      <Routes>
+        {/* Legal pages don't depend on the anime roster — always available. */}
+        <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+        <Route path="/terms" element={<LegalPage doc="terms" />} />
+        <Route path="/cookies" element={<LegalPage doc="cookies" />} />
+        {data ? (
+          <>
+            <Route path="/" element={<Home data={data} board={board} ratingOf={ratingOf} source={source} />} />
+            <Route path="/vote" element={<Vote key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} totalVotes={totalVotes} />} />
+            <Route path="/leaderboard" element={<Leaderboard key={cat} data={filtered} board={board} />} />
+            <Route path="/quiz" element={<Quiz key={cat} data={filtered} ratingOf={ratingOf} onVote={recordVote} />} />
+            <Route path="/war" element={<EraWar data={data} onVote={recordVote} />} />
+            <Route path="/anime/:slug" element={<AnimeDetail data={data} board={board} ratingOf={ratingOf} />} />
+            <Route path="*" element={<Home data={data} board={board} ratingOf={ratingOf} source={source} />} />
+          </>
+        ) : (
+          <Route path="*" element={<div style={S.loading}>Loading the roster…</div>} />
+        )}
+      </Routes>
+
+      <Footer />
     </div>
   );
 }

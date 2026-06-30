@@ -112,10 +112,22 @@ function wordmark(ctx, x, y, size = 30) {
   ctx.fillStyle = C.accent; ctx.fillText("RANKER", cx, y);
   ctx.letterSpacing = "0px";
 }
+// Same wordmark, but centered on `cx` (measures the parts first).
+function wordmarkCenter(ctx, cx, y, size = 30) {
+  ctx.textBaseline = "alphabetic";
+  ctx.letterSpacing = "3px";
+  ctx.font = sans(800, size);
+  const parts = [["◆ ", C.accent], ["ANIME", C.text], ["RANKER", C.accent]];
+  const total = parts.reduce((s, [t]) => s + ctx.measureText(t).width, 0);
+  let x = cx - total / 2;
+  ctx.textAlign = "left";
+  for (const [t, col] of parts) { ctx.fillStyle = col; ctx.fillText(t, x, y); x += ctx.measureText(t).width; }
+  ctx.letterSpacing = "0px";
+}
 function footer(ctx, w, h) {
   ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
   ctx.font = mono(600, 24);
-  const url = "animeranker.vercel.app";
+  const url = "animeranker.net";
   const dot = "◆ ";
   const tw = ctx.measureText(dot + url).width;
   const sx = (w - tw) / 2;
@@ -266,27 +278,36 @@ export function renderEraCard(result) {
   return c;
 }
 
-// --- TITLE CARD -------------------------------------------------------------
-// A single title's standing, mirroring the detail hero: cover on the left;
-// era eyebrow, title, and RANK / ELO / VOTES on the right. The wordmark + URL
-// sit underneath the cover. meta = { rank, elo, votes }.
+// --- TITLE CARD (9:16 portrait, for vertical edits) -------------------------
+// A single title's standing as a full 1080×1920 card: big cover up top, then
+// era eyebrow + title + RANK / ELO centered beneath it, with the wordmark + URL
+// pinned near the bottom. Sized to drop straight into a 9:16 video edit.
+// meta = { rank, elo } (votes intentionally omitted from the card).
 export async function renderTitleCard(item, meta = {}) {
-  const W = 1080, H = 1080, P = 80;
+  const W = 1080, H = 1920, P = 80;
   const c = makeCanvas(W, H), ctx = c.getContext("2d");
   bgGlow(ctx, W, H);
 
   const isNew = item.era === "new";
   const eraColor = isNew ? C.accent : C.oldBlue;
 
-  // left column: cover + (wordmark + url) underneath it, vertically centered
-  const coverW = 360, coverH = Math.round(coverW / 0.75); // 3/4 portrait → 480
-  const capGap = 64, capH = 84;                            // logo + url block
-  const blockH = coverH + capGap + capH;
-  const coverX = P, coverY = Math.round((H - blockH) / 2);
+  const coverW = 660, coverH = Math.round(coverW / 0.75); // 3:4 portrait → 880
+  const coverX = Math.round((W - coverW) / 2);
 
+  // measure the title first so the whole stack can be vertically centered
+  ctx.font = sans(800, 84);
+  const titleLines = lines(ctx, item.title || "", W - P * 2, 2);
+  const titleLh = 96;
+  const eyebrowGap = 100, titleGap = 104, statsGap = 150, labelGap = 44;
+  const blockH = coverH + eyebrowGap + titleGap
+    + (titleLines.length - 1) * titleLh + statsGap + labelGap;
+  const regionTop = P, regionBottom = H - 250;
+  const coverY = Math.round(regionTop + (regionBottom - regionTop - blockH) / 2);
+
+  // cover
   const img = await loadImage(item.image);
   ctx.save();
-  roundRect(ctx, coverX, coverY, coverW, coverH, 20); ctx.clip();
+  roundRect(ctx, coverX, coverY, coverW, coverH, 24); ctx.clip();
   if (img) {
     drawCover(ctx, img, coverX, coverY, coverW, coverH);
   } else {
@@ -295,53 +316,57 @@ export async function renderTitleCard(item, meta = {}) {
     g.addColorStop(0, `hsl(${hue} 55% 22%)`);
     g.addColorStop(1, `hsl(${(hue + 40) % 360} 60% 12%)`);
     ctx.fillStyle = g; ctx.fillRect(coverX, coverY, coverW, coverH);
-    ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.font = sans(700, 40);
+    ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.font = sans(700, 48);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const ls = lines(ctx, item.title || "", coverW - 40, 3);
-    ls.forEach((ln, i) => ctx.fillText(ln, coverX + coverW / 2, coverY + coverH / 2 + (i - (ls.length - 1) / 2) * 48));
+    const ls = lines(ctx, item.title || "", coverW - 56, 3);
+    ls.forEach((ln, i) => ctx.fillText(ln, coverX + coverW / 2, coverY + coverH / 2 + (i - (ls.length - 1) / 2) * 58));
   }
   ctx.restore();
   ctx.save();
-  roundRect(ctx, coverX, coverY, coverW, coverH, 20);
+  roundRect(ctx, coverX, coverY, coverW, coverH, 24);
   ctx.lineWidth = 1; ctx.strokeStyle = C.line; ctx.stroke();
   ctx.restore();
 
-  // wordmark + url, underneath the cover, left-aligned to it
-  const capY = coverY + coverH + capGap;
-  wordmark(ctx, coverX, capY, 30);
-  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-  ctx.font = mono(600, 26); ctx.fillStyle = C.faint;
-  ctx.fillText("animeranker.net", coverX, capY + 42);
-
-  // right column: era eyebrow, title, stats
-  const rightX = coverX + coverW + 72;
-  const rightW = W - rightX - P;
-  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-
-  let by = coverY + 40; // eyebrow baseline
-  ctx.letterSpacing = "5px"; ctx.font = sans(700, 22); ctx.fillStyle = eraColor;
-  ctx.fillText(`${isNew ? "NEW GEN" : "OLD GEN"}${item.year ? ` · ${item.year}` : ""}`, rightX, by);
+  // era eyebrow (centered under the cover)
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  let by = coverY + coverH + eyebrowGap;
+  ctx.letterSpacing = "6px"; ctx.font = sans(700, 26); ctx.fillStyle = eraColor;
+  ctx.fillText(`${isNew ? "NEW GEN" : "OLD GEN"}${item.year ? ` · ${item.year}` : ""}`, W / 2, by);
   ctx.letterSpacing = "0px";
 
-  by += 92; // first title baseline
-  ctx.font = sans(800, 76); ctx.fillStyle = C.text;
-  const tl = lines(ctx, item.title || "", rightW, 2);
-  const lh = 84;
-  tl.forEach((ln, i) => ctx.fillText(ln, rightX, by + i * lh));
+  // title (centered, up to 2 lines)
+  by += titleGap;
+  ctx.font = sans(800, 84); ctx.fillStyle = C.text;
+  titleLines.forEach((ln, i) => ctx.fillText(ln, W / 2, by + i * titleLh));
 
-  by += (tl.length - 1) * lh + 132; // stat value baseline
-  const stats = [["RANK", `#${meta.rank}`, false], ["ELO", String(meta.elo), true], ["VOTES", String(meta.votes), false]];
-  let sx = rightX;
-  for (const [label, value, accent] of stats) {
-    ctx.font = mono(800, 58); ctx.fillStyle = accent ? C.accent : C.text;
-    ctx.fillText(value, sx, by);
-    const vw = ctx.measureText(value).width;
-    ctx.letterSpacing = "2px"; ctx.font = sans(700, 18); ctx.fillStyle = C.muted;
-    ctx.fillText(label, sx, by + 34);
-    const lw = ctx.measureText(label).width;
+  // stats: RANK + ELO, centered as a group (VOTES removed)
+  by += (titleLines.length - 1) * titleLh + statsGap;
+  const stats = [["RANK", `#${meta.rank}`, false], ["ELO", String(meta.elo), true]];
+  const colGap = 96;
+  const widths = stats.map(([label, value]) => {
+    ctx.font = mono(800, 76); const vw = ctx.measureText(value).width;
+    ctx.letterSpacing = "3px"; ctx.font = sans(700, 22); const lw = ctx.measureText(label).width;
     ctx.letterSpacing = "0px";
-    sx += Math.max(vw, lw) + 48;
-  }
+    return Math.max(vw, lw);
+  });
+  const totalW = widths.reduce((s, w) => s + w, 0) + colGap * (stats.length - 1);
+  let sx = (W - totalW) / 2;
+  stats.forEach(([label, value, accent], i) => {
+    const cxi = sx + widths[i] / 2;
+    ctx.textAlign = "center";
+    ctx.font = mono(800, 76); ctx.fillStyle = accent ? C.accent : C.text;
+    ctx.fillText(value, cxi, by);
+    ctx.letterSpacing = "3px"; ctx.font = sans(700, 22); ctx.fillStyle = C.muted;
+    ctx.fillText(label, cxi, by + labelGap);
+    ctx.letterSpacing = "0px";
+    sx += widths[i] + colGap;
+  });
+
+  // footer: wordmark + larger URL, centered and pinned near the bottom
+  wordmarkCenter(ctx, W / 2, H - 150, 42);
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.font = mono(700, 46); ctx.fillStyle = C.faint;
+  ctx.fillText("animeranker.net", W / 2, H - 84);
 
   return c;
 }
@@ -383,7 +408,7 @@ export function renderOgCanvas() {
 
   ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
   ctx.font = mono(600, 26); ctx.fillStyle = C.faint;
-  ctx.fillText("animeranker.vercel.app", W / 2, H - 48);
+  ctx.fillText("animeranker.net", W / 2, H - 48);
   return c;
 }
 
@@ -411,14 +436,14 @@ export async function shareTierList(tiers, meta) {
   const canvas = await renderTierCard(tiers, meta);
   return shareCanvas(canvas, "animeranker-tier-list.png", {
     title: "My AnimeRanker tier list",
-    text: "My anime tier list — make yours at animeranker.vercel.app",
+    text: "My anime tier list — make yours at animeranker.net",
   });
 }
 export async function shareEraVerdict(result) {
   const canvas = renderEraCard(result);
   return shareCanvas(canvas, "animeranker-era-war.png", {
     title: "My Era War verdict",
-    text: `I'm ${result.verdict} — settle Old Gen vs New Gen at animeranker.vercel.app`,
+    text: `I'm ${result.verdict} — settle Old Gen vs New Gen at animeranker.net`,
   });
 }
 // Render the title card and hand back a blob URL for it. The caller is expected

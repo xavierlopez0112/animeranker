@@ -9,7 +9,7 @@
 // values. A draft banner is shown on every page to make this unmissable.
 
 export const LAST_UPDATED = "June 24, 2026";
-export const CONTACT = "privacy@animeranker.app"; // ← replace with your real contact address
+export const CONTACT = "contact@animeranker.net";
 export const JURISDICTION = "your home jurisdiction"; // ← replace, e.g. "the State of California, USA"
 
 // Each section: { h, body: [ "<paragraph>" | ["<bullet>", "<bullet>"] ] }

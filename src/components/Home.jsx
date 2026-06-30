@@ -4,7 +4,7 @@ import Cover from "./Cover.jsx";
 import { S } from "../styles.js";
 import { logEvent } from "../lib/supabase.js";
 
-const SITE = "https://animeranker.vercel.app";
+const SITE = "https://animeranker.net";
 const SHARE_TEXT = "Which anime is better? Vote head-to-head and settle Old Gen vs New Gen on AnimeRanker";
 
 export default function Home({ data, ratingOf, source }) {

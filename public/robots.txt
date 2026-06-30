@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://animeranker.net/sitemap.xml

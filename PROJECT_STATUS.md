@@ -10,7 +10,7 @@ War," per-title detail pages, and a landing page. The product goal is *shareabil
 contestability* — fast, opinionated choices people want to argue about and share.
 
 ## Live links
-- **Production app:** https://animeranker.vercel.app
+- **Production app:** https://animeranker.net
 - **Code:** https://github.com/xavierlopez0112/animeranker (branch `main`)
 - **Database:** Supabase (Postgres) — project `jnvfqsusnqueziccnwcq` (keys are not in the repo)
 
